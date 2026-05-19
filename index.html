@@ -26,15 +26,13 @@
         }
         .bill-header { background-color: #0b3d91; color: white; }
         .table-header { background-color: #0b3d91; color: white; }
-        
-        /* สไตล์ฟอร์มในมือถือให้ดูเป็นสัดส่วน */
         .mobile-card { background: #fdfdfd; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
     </style>
 </head>
 <body class="p-2 md:p-8 flex flex-col items-center">
 
     <div class="no-print w-full max-w-4xl bg-white p-4 md:p-6 rounded-lg shadow-md mb-8">
-        <h2 class="text-xl font-bold mb-4 border-b pb-2">📝 กรอกข้อมูลบิล</h2>
+        <h2 class="text-xl font-bold mb-4 border-b pb-2">📝 กรอกข้อมูลบิล (ระบบคำนวณอัตโนมัติ)</h2>
         
         <h3 class="font-bold text-blue-800 mb-2 mt-4">1. ข้อมูลลูกค้า</h3>
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
@@ -73,13 +71,15 @@
                 <label class="block text-sm text-gray-600">หมายเหตุ (เช่น เงื่อนไขมัดจำ):</label>
                 <textarea id="in-remarks" rows="3" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">1. ตกลงทำ มัดจำสั่งของ 26000 บาท (สิ้นผลิตของประมาณ 10-14 วัน)&#10;2. ของมาก่อนเข้าไปติดตั้งบ้าน 22000 บาท&#10;3. ติดตั้งเสร็จ ส่งงาน 10000 บาท</textarea>
             </div>
+            
             <div>
-                <label class="block text-sm text-gray-600 font-bold">จำนวนเงินรวมทั้งสิ้น (ตัวเลข):</label>
-                <input type="text" id="in-total-num" value="58,000" class="w-full border border-gray-300 p-2 rounded font-bold text-blue-700" oninput="updatePreview()">
+                <label class="block text-sm text-gray-600 font-bold text-gray-400">จำนวนเงินรวมทั้งสิ้น (คำนวณอัตโนมัติ):</label>
+                <input type="text" id="in-total-num" value="0" class="w-full border border-gray-300 bg-gray-100 p-2 rounded font-bold text-gray-500" readonly>
             </div>
+            
             <div>
-                <label class="block text-sm text-gray-600 font-bold">จำนวนเงินรวม (ตัวอักษรไทย):</label>
-                <input type="text" id="in-total-text" value="ห้าหมื่นแปดพันบาทถ้วน" class="w-full border border-gray-300 p-2 rounded font-bold text-blue-700" oninput="updatePreview()">
+                <label class="block text-sm text-gray-600 font-bold text-gray-400">จำนวนเงินรวมตัวอักษร (คำนวณอัตโนมัติ):</label>
+                <input type="text" id="in-total-text" value="ศูนย์บาทถ้วน" class="w-full border border-gray-300 bg-gray-100 p-2 rounded font-bold text-gray-500" readonly>
             </div>
         </div>
 
@@ -130,13 +130,12 @@
                 <tr class="table-header text-center">
                     <th class="border border-gray-300 py-2 w-16">ลำดับ</th>
                     <th class="border border-gray-300 py-2 text-left px-4">รายการ</th>
-                    <th class="border border-gray-300 py-2 w-24">จำนวน</th>
+                    <th class="border border-gray-300 py-2 w-28">จำนวน</th>
                     <th class="border border-gray-300 py-2 w-28">ราคา</th>
                     <th class="border border-gray-300 py-2 w-28">ราคาสุทธิ</th>
                 </tr>
             </thead>
-            <tbody class="text-center" id="out-items-tbody">
-                </tbody>
+            <tbody class="text-center" id="out-items-tbody"></tbody>
         </table>
 
         <div class="flex justify-between items-end">
@@ -148,11 +147,11 @@
                 <table class="w-full border-collapse border border-gray-300">
                     <tr>
                         <td class="border border-gray-300 py-1 px-4 text-right font-bold w-1/2">จำนวนเงินรวมทั้งสิ้น</td>
-                        <td id="out-total-num" class="border border-gray-300 py-1 px-4 text-right"></td>
+                        <td id="out-total-num" class="border border-gray-300 py-1 px-4 text-right">0</td>
                     </tr>
                     <tr class="bg-blue-100">
                         <td class="border border-gray-300 py-1 px-4 text-right font-bold">จำนวนเงินรวมทั้งสิ้น</td>
-                        <td id="out-total-text" class="border border-gray-300 py-1 px-4 text-center text-sm text-gray-700"></td>
+                        <td id="out-total-text" class="border border-gray-300 py-1 px-4 text-center text-sm text-gray-700">ศูนย์บาทถ้วน</td>
                     </tr>
                 </table>
             </div>
@@ -167,14 +166,12 @@
     </div>
 
     <script>
-        // ข้อมูลเริ่มต้นสำหรับรายการสินค้า
+        // เริ่มต้นมี 1 รายการเป็นตัวอย่าง
         let itemsData = [
-            { no: "1", desc: "ค่าของ ประตูยืด เฉพาะบังตา สีขาว", qty: "3 ชุด", price: "", total: "" },
-            { no: "1.1", desc: "ประตูม้วนบานเล็ก (สีขาว)", qty: "1 ชุด", price: "46,000", total: "46,000" },
-            { no: "2", desc: "ค่าแรงติดตั้งประตูยืด 3 ชุด ประตูม้วน 1", qty: "4 ชุด", price: "12,000", total: "12,000" }
+            { no: "1", desc: "ค่าของ ประตูยืด เฉพาะบังตา สีขาว", qty: 3, unit: "ชุด", price: 15000 }
         ];
 
-        // วาดฟอร์มกรอกรายการ
+        // ฟังก์ชันวาดหน้าจอกรอกข้อมูลสำหรับมือถือ
         function renderItemsForm() {
             const container = document.getElementById('items-form-container');
             container.innerHTML = '';
@@ -182,44 +179,57 @@
             itemsData.forEach((item, index) => {
                 const card = document.createElement('div');
                 card.className = 'mobile-card relative';
+                
+                // คำนวณราคาสุทธิของแถวนี้ (จำนวน x ราคาต่อหน่วย)
+                const currentTotal = (item.qty || 0) * (item.price || 0);
+                
                 card.innerHTML = `
                     <div class="absolute top-2 right-2 cursor-pointer text-red-500 font-bold bg-red-100 px-2 py-1 rounded text-xs" onclick="removeItem(${index})">X ลบ</div>
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 pr-12">
-                        <div class="col-span-2 md:col-span-4">
-                            <label class="text-xs text-gray-500">ลำดับ / รหัส:</label>
+                        <div>
+                            <label class="text-xs text-gray-500">ลำดับ:</label>
                             <input type="text" value="${item.no}" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'no', this.value)">
                         </div>
-                        <div class="col-span-2 md:col-span-4">
-                            <label class="text-xs text-gray-500">รายละเอียด:</label>
+                        <div class="col-span-1 md:col-span-3">
+                            <label class="text-xs text-gray-500">รายละเอียดสินค้า/บริการ:</label>
                             <input type="text" value="${item.desc}" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'desc', this.value)">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">จำนวน:</label>
-                            <input type="text" value="${item.qty}" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', this.value)">
+                            <label class="text-xs text-gray-500">จำนวน (ตัวเลข):</label>
+                            <input type="number" value="${item.qty || ''}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', parseFloat(this.value) || 0)">
                         </div>
                         <div>
-                            <label class="text-xs text-gray-500">ราคา:</label>
-                            <input type="text" value="${item.price}" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', this.value)">
+                            <label class="text-xs text-gray-500">หน่วยนับ:</label>
+                            <input type="text" value="${item.unit || 'ชุด'}" placeholder="ชุด / บาน / ลัง" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'unit', this.value)">
                         </div>
-                        <div class="col-span-2">
-                            <label class="text-xs text-gray-500 font-bold">ราคาสุทธิ:</label>
-                            <input type="text" value="${item.total}" class="w-full border p-1 rounded text-sm font-bold text-blue-600" oninput="updateItemData(${index}, 'total', this.value)">
+                        <div>
+                            <label class="text-xs text-gray-500">ราคาต่อหน่วย:</label>
+                            <input type="number" value="${item.price || ''}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', parseFloat(this.value) || 0)">
+                        </div>
+                        <div>
+                            <label class="text-xs text-gray-500 font-bold text-blue-600">ราคาสุทธิ:</label>
+                            <div class="w-full bg-blue-50 p-1 rounded text-sm font-bold text-blue-600 border border-blue-200">${currentTotal.toLocaleString()} บาท</div>
                         </div>
                     </div>
                 `;
                 container.appendChild(card);
             });
-            updatePreview(); // อัปเดตพรีวิวเสมอ
+            calculateAllTotals(); // สั่งคำนวณยอดรวมใหม่ทุกครั้งที่วาด
         }
 
-        // อัปเดต State
         function updateItemData(index, field, value) {
             itemsData[index][field] = value;
-            updatePreview();
+            // ถ้ามีการเปลี่ยน จำนวน หรือ ราคา ให้คำนวณยอดรวมใหม่
+            if (field === 'qty' || field === 'price' || field === 'unit') {
+                calculateAllTotals();
+            } else {
+                updatePreview();
+            }
         }
 
         function addItem() {
-            itemsData.push({ no: "", desc: "", qty: "", price: "", total: "" });
+            const nextNo = itemsData.length + 1;
+            itemsData.push({ no: nextNo.toString(), desc: "", qty: 1, unit: "ชุด", price: 0 });
             renderItemsForm();
         }
 
@@ -230,34 +240,113 @@
             }
         }
 
-        // นำข้อมูลทั้งหมดไปแสดงในกระดาษ A4
+        // ==========================================
+        // 🧮 ฟังก์ชันคำนวณเงินรวมอัตโนมัติทั้งระบบ
+        // ==========================================
+        function calculateAllTotals() {
+            let grandTotal = 0;
+            
+            // รวมราคาสุทธิของทุกแถว
+            itemsData.forEach(item => {
+                grandTotal += (item.qty || 0) * (item.price || 0);
+            });
+
+            // ปรับฟอร์แมตลูกน้ำ (เช่น 58000 เป็น 58,000)
+            const formattedTotal = grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 0 });
+            
+            // เอาไปใส่ในแผงควบคุมหลัก
+            document.getElementById('in-total-num').value = formattedTotal;
+            document.getElementById('in-total-text').value = ArabicNumberToText(grandTotal.toString());
+
+            updatePreview();
+        }
+
+        // ฟังก์ชันแปลงเลขเป็นอักษรไทย
+        function ArabicNumberToText(Number) {
+            Number = Number.replace(/[, ]/g, '');
+            if (isNaN(Number) || Number === '') return '';
+            
+            Number = parseFloat(Number).toFixed(2);
+            let txtNumArr = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
+            let txtDigitArr = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
+            let BahtText = '';
+            let splitNum = Number.split('.');
+            let intVal = splitNum[0];
+            let decVal = splitNum[1];
+
+            if (intVal == '0' && decVal == '00') return 'ศูนย์บาทถ้วน';
+
+            if (intVal != '0') {
+                for (let i = 0; i < intVal.length; i++) {
+                    let n = intVal.substring(i, i + 1);
+                    if (n != '0') {
+                        if ((i == (intVal.length - 1)) && (n == '1') && intVal.length > 1) {
+                            BahtText += 'เอ็ด';
+                        } else if ((i == (intVal.length - 2)) && (n == '2')) {
+                            BahtText += 'ยี่สิบ';
+                        } else if ((i == (intVal.length - 2)) && (n == '1')) {
+                            BahtText += 'สิบ';
+                        } else {
+                            BahtText += txtNumArr[n] + txtDigitArr[intVal.length - i - 1];
+                        }
+                    }
+                }
+                BahtText += 'บาท';
+            }
+
+            if (decVal == '00') {
+                BahtText += 'ถ้วน';
+            } else {
+                for (let i = 0; i < decVal.length; i++) {
+                    let n = decVal.substring(i, i + 1);
+                    if (n != '0') {
+                        if ((i == (decVal.length - 1)) && (n == '1') && decVal[0] != '0') {
+                            BahtText += 'เอ็ด';
+                        } else if ((i == (decVal.length - 2)) && (n == '2')) {
+                            BahtText += 'ยี่สิบ';
+                        } else if ((i == (decVal.length - 2)) && (n == '1')) {
+                            BahtText += 'สิบ';
+                        } else {
+                            BahtText += txtNumArr[n] + txtDigitArr[decVal.length - i - 1];
+                        }
+                    }
+                }
+                BahtText += 'สตางค์';
+            }
+            return BahtText;
+        }
+
+        // ฟังก์ชันวาดผลลัพธ์ลงในใบเสร็จจำลอง A4
         function updatePreview() {
-            // อัปเดตข้อความทั่วไป
             document.getElementById('out-customer-name').innerText = document.getElementById('in-customer-name').value;
             document.getElementById('out-customer-addr').innerText = document.getElementById('in-customer-addr').value;
             document.getElementById('out-tax-id').innerText = document.getElementById('in-tax-id').value;
             document.getElementById('out-job-name').innerText = document.getElementById('in-job-name').value;
             document.getElementById('out-date').innerText = document.getElementById('in-date').value;
-            document.getElementById('out-total-num').innerText = document.getElementById('in-total-num').value;
-            document.getElementById('out-total-text').innerText = document.getElementById('in-total-text').value;
+            
+            // ดึงค่าผลรวมมาแสดงในพรีวิว
+            const finalNum = document.getElementById('in-total-num').value;
+            const finalText = document.getElementById('in-total-text').value;
+            document.getElementById('out-total-num').innerText = finalNum;
+            document.getElementById('out-total-text').innerText = finalText;
 
-            // วาดตารางใหม่
             const tbody = document.getElementById('out-items-tbody');
             let tableHTML = '';
             
-            // วนลูปสร้างแถวสินค้า
+            // วนลูปวาดรายการในตาราง A4
             itemsData.forEach(item => {
+                const rowTotal = (item.qty || 0) * (item.price || 0);
                 tableHTML += `
                 <tr class="align-top">
                     <td class="border-r border-l border-gray-300 py-2 pt-4">${item.no}</td>
                     <td class="border-r border-gray-300 py-2 px-4 text-left pt-4">${item.desc}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${item.qty}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${item.price}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${item.total}</td>
+                    <td class="border-r border-gray-300 py-2 pt-4">${item.qty ? item.qty + ' ' + (item.unit || 'ชุด') : ''}</td>
+                    <td class="border-r border-gray-300 py-2 pt-4">${item.price ? item.price.toLocaleString() : ''}</td>
+                    <td class="border-r border-gray-300 py-2 pt-4">${rowTotal ? rowTotal.toLocaleString() : ''}</td>
                 </tr>`;
             });
 
-            // ดึงข้อความหมายเหตุมาใส่ด้านล่างรายการ
+            // ใส่หมายเหตุสีแดงใต้ตาราง
             const remarks = document.getElementById('in-remarks').value;
             if(remarks.trim() !== '') {
                 tableHTML += `
@@ -273,7 +362,7 @@
                 </tr>`;
             }
 
-            // แถวว่างดันความสูงให้ตารางดูเต็มเหมือนกระดาษ
+            // แถวว่างเสริมความสูงกระดาษ
             tableHTML += `
             <tr class="h-48">
                 <td class="border-r border-l border-gray-300"></td>
@@ -286,10 +375,9 @@
             tbody.innerHTML = tableHTML;
         }
 
-        // เรียกใช้งานครั้งแรกตอนโหลดหน้าเว็บ
+        // รันโปรแกรมครั้งแรก
         renderItemsForm();
 
-        // ฟังก์ชันดาวน์โหลด PDF
         function downloadPDF() {
             const element = document.getElementById('receipt-preview');
             const opt = {
@@ -302,7 +390,6 @@
             html2pdf().set(opt).from(element).save();
         }
 
-        // ฟังก์ชันดาวน์โหลดรูปภาพ (PNG)
         function downloadImage() {
             const element = document.getElementById('receipt-preview');
             html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
