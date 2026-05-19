@@ -38,23 +38,23 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
             <div>
                 <label class="block text-sm text-gray-600">ชื่อลูกค้า:</label>
-                <input type="text" id="in-customer-name" value="บริษัท บี.เค.สปอร์ตคอมเพล็กซ์ จำกัด" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
+                <input type="text" id="in-customer-name" value="" placeholder="เช่น บริษัท บี.เค.สปอร์ตคอมเพล็กซ์ จำกัด" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
             </div>
             <div>
                 <label class="block text-sm text-gray-600">ที่อยู่ลูกค้า:</label>
-                <input type="text" id="in-customer-addr" value="126/2 หมู่ 4 ต.บางกุ้ง อ.เมือง จ.สุราษฎร์ธานี" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
+                <input type="text" id="in-customer-addr" value="" placeholder="เช่น 126/2 หมู่ 4 ต.บางกุ้ง อ.เมือง จ.สุราษฎร์ธานี" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
             </div>
             <div>
                 <label class="block text-sm text-gray-600">เลขประจำตัวผู้เสียภาษี:</label>
-                <input type="text" id="in-tax-id" value="0845568014224" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
+                <input type="text" id="in-tax-id" value="" placeholder="เช่น 0845568014224" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
             </div>
             <div>
                 <label class="block text-sm text-gray-600">ชื่องาน:</label>
-                <input type="text" id="in-job-name" value="ติดตั้งประตูยืด" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
+                <input type="text" id="in-job-name" value="" placeholder="เช่น ติดตั้งประตูยืด" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
             </div>
             <div>
                 <label class="block text-sm text-gray-600">วันที่:</label>
-                <input type="text" id="in-date" value="19 พฤษภาคม 2569" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
+                <input type="text" id="in-date" value="" placeholder="เช่น 19 พฤษภาคม 2569" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
             </div>
         </div>
 
@@ -69,7 +69,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
             <div class="md:col-span-2">
                 <label class="block text-sm text-gray-600">หมายเหตุ (เช่น เงื่อนไขมัดจำ):</label>
-                <textarea id="in-remarks" rows="3" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">1. ตกลงทำ มัดจำสั่งของ 26000 บาท (สิ้นผลิตของประมาณ 10-14 วัน)&#10;2. ของมาก่อนเข้าไปติดตั้งบ้าน 22000 บาท&#10;3. ติดตั้งเสร็จ ส่งงาน 10000 บาท</textarea>
+                <textarea id="in-remarks" rows="3" placeholder="1. ตกลงทำ มัดจำสั่งของ...&#10;2. ของมาก่อนเข้าไปติดตั้ง..." class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()"></textarea>
             </div>
             
             <div>
@@ -166,12 +166,11 @@
     </div>
 
     <script>
-        // เริ่มต้นมี 1 รายการเป็นตัวอย่าง
+        // เคลียร์ข้อมูลแถวสินค้าเริ่มต้นให้ว่าง เพื่อให้ผู้ใช้เปิดมากดพิมพ์ใหม่ได้เลย
         let itemsData = [
-            { no: "1", desc: "ค่าของ ประตูยืด เฉพาะบังตา สีขาว", qty: 3, unit: "ชุด", price: 15000 }
+            { no: "1", desc: "", qty: "", unit: "ชุด", price: "" }
         ];
 
-        // ฟังก์ชันวาดหน้าจอกรอกข้อมูลสำหรับมือถือ
         function renderItemsForm() {
             const container = document.getElementById('items-form-container');
             container.innerHTML = '';
@@ -180,8 +179,7 @@
                 const card = document.createElement('div');
                 card.className = 'mobile-card relative';
                 
-                // คำนวณราคาสุทธิของแถวนี้ (จำนวน x ราคาต่อหน่วย)
-                const currentTotal = (item.qty || 0) * (item.price || 0);
+                const currentTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
                 
                 card.innerHTML = `
                     <div class="absolute top-2 right-2 cursor-pointer text-red-500 font-bold bg-red-100 px-2 py-1 rounded text-xs" onclick="removeItem(${index})">X ลบ</div>
@@ -192,11 +190,11 @@
                         </div>
                         <div class="col-span-1 md:col-span-3">
                             <label class="text-xs text-gray-500">รายละเอียดสินค้า/บริการ:</label>
-                            <input type="text" value="${item.desc}" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'desc', this.value)">
+                            <input type="text" value="${item.desc}" placeholder="เช่น ค่าของ ประตูยืด เฉพาะบังตา สีขาว" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'desc', this.value)">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">จำนวน (ตัวเลข):</label>
-                            <input type="number" value="${item.qty || ''}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', parseFloat(this.value) || 0)">
+                            <input type="number" value="${item.qty}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', this.value)">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">หน่วยนับ:</label>
@@ -204,7 +202,7 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">ราคาต่อหน่วย:</label>
-                            <input type="number" value="${item.price || ''}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', parseFloat(this.value) || 0)">
+                            <input type="number" value="${item.price}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', this.value)">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 font-bold text-blue-600">ราคาสุทธิ:</label>
@@ -214,12 +212,11 @@
                 `;
                 container.appendChild(card);
             });
-            calculateAllTotals(); // สั่งคำนวณยอดรวมใหม่ทุกครั้งที่วาด
+            calculateAllTotals();
         }
 
         function updateItemData(index, field, value) {
             itemsData[index][field] = value;
-            // ถ้ามีการเปลี่ยน จำนวน หรือ ราคา ให้คำนวณยอดรวมใหม่
             if (field === 'qty' || field === 'price' || field === 'unit') {
                 calculateAllTotals();
             } else {
@@ -229,7 +226,7 @@
 
         function addItem() {
             const nextNo = itemsData.length + 1;
-            itemsData.push({ no: nextNo.toString(), desc: "", qty: 1, unit: "ชุด", price: 0 });
+            itemsData.push({ no: nextNo.toString(), desc: "", qty: "", unit: "ชุด", price: "" });
             renderItemsForm();
         }
 
@@ -240,31 +237,26 @@
             }
         }
 
-        // ==========================================
-        // 🧮 ฟังก์ชันคำนวณเงินรวมอัตโนมัติทั้งระบบ
-        // ==========================================
         function calculateAllTotals() {
             let grandTotal = 0;
             
-            // รวมราคาสุทธิของทุกแถว
             itemsData.forEach(item => {
-                grandTotal += (item.qty || 0) * (item.price || 0);
+                const q = parseFloat(item.qty) || 0;
+                const p = parseFloat(item.price) || 0;
+                grandTotal += q * p;
             });
 
-            // ปรับฟอร์แมตลูกน้ำ (เช่น 58000 เป็น 58,000)
             const formattedTotal = grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 0 });
             
-            // เอาไปใส่ในแผงควบคุมหลัก
             document.getElementById('in-total-num').value = formattedTotal;
             document.getElementById('in-total-text').value = ArabicNumberToText(grandTotal.toString());
 
             updatePreview();
         }
 
-        // ฟังก์ชันแปลงเลขเป็นอักษรไทย
         function ArabicNumberToText(Number) {
             Number = Number.replace(/[, ]/g, '');
-            if (isNaN(Number) || Number === '') return '';
+            if (isNaN(Number) || Number === '' || parseFloat(Number) === 0) return 'ศูนย์บาทถ้วน';
             
             Number = parseFloat(Number).toFixed(2);
             let txtNumArr = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
@@ -273,8 +265,6 @@
             let splitNum = Number.split('.');
             let intVal = splitNum[0];
             let decVal = splitNum[1];
-
-            if (intVal == '0' && decVal == '00') return 'ศูนย์บาทถ้วน';
 
             if (intVal != '0') {
                 for (let i = 0; i < intVal.length; i++) {
@@ -316,7 +306,6 @@
             return BahtText;
         }
 
-        // ฟังก์ชันวาดผลลัพธ์ลงในใบเสร็จจำลอง A4
         function updatePreview() {
             document.getElementById('out-customer-name').innerText = document.getElementById('in-customer-name').value;
             document.getElementById('out-customer-addr').innerText = document.getElementById('in-customer-addr').value;
@@ -324,7 +313,6 @@
             document.getElementById('out-job-name').innerText = document.getElementById('in-job-name').value;
             document.getElementById('out-date').innerText = document.getElementById('in-date').value;
             
-            // ดึงค่าผลรวมมาแสดงในพรีวิว
             const finalNum = document.getElementById('in-total-num').value;
             const finalText = document.getElementById('in-total-text').value;
             document.getElementById('out-total-num').innerText = finalNum;
@@ -333,20 +321,21 @@
             const tbody = document.getElementById('out-items-tbody');
             let tableHTML = '';
             
-            // วนลูปวาดรายการในตาราง A4
             itemsData.forEach(item => {
-                const rowTotal = (item.qty || 0) * (item.price || 0);
+                const q = parseFloat(item.qty) || 0;
+                const p = parseFloat(item.price) || 0;
+                const rowTotal = q * p;
+                
                 tableHTML += `
                 <tr class="align-top">
                     <td class="border-r border-l border-gray-300 py-2 pt-4">${item.no}</td>
                     <td class="border-r border-gray-300 py-2 px-4 text-left pt-4">${item.desc}</td>
                     <td class="border-r border-gray-300 py-2 pt-4">${item.qty ? item.qty + ' ' + (item.unit || 'ชุด') : ''}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${item.price ? item.price.toLocaleString() : ''}</td>
+                    <td class="border-r border-gray-300 py-2 pt-4">${p ? p.toLocaleString() : ''}</td>
                     <td class="border-r border-gray-300 py-2 pt-4">${rowTotal ? rowTotal.toLocaleString() : ''}</td>
                 </tr>`;
             });
 
-            // ใส่หมายเหตุสีแดงใต้ตาราง
             const remarks = document.getElementById('in-remarks').value;
             if(remarks.trim() !== '') {
                 tableHTML += `
@@ -362,7 +351,6 @@
                 </tr>`;
             }
 
-            // แถวว่างเสริมความสูงกระดาษ
             tableHTML += `
             <tr class="h-48">
                 <td class="border-r border-l border-gray-300"></td>
@@ -375,14 +363,13 @@
             tbody.innerHTML = tableHTML;
         }
 
-        // รันโปรแกรมครั้งแรก
         renderItemsForm();
 
         function downloadPDF() {
             const element = document.getElementById('receipt-preview');
             const opt = {
                 margin:       0,
-                filename:     'บิลเงินสด_' + document.getElementById('in-customer-name').value + '.pdf',
+                filename:     'บิลเงินสด_' + (document.getElementById('in-customer-name').value || 'ไม่มีชื่อ') + '.pdf',
                 image:        { type: 'jpeg', quality: 0.98 },
                 html2canvas:  { scale: 2, useCORS: true },
                 jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
@@ -394,7 +381,7 @@
             const element = document.getElementById('receipt-preview');
             html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
                 const link = document.createElement('a');
-                link.download = 'บิลเงินสด_' + document.getElementById('in-customer-name').value + '.png';
+                link.download = 'บิลเงินสด_' + (document.getElementById('in-customer-name').value || 'ไม่มีชื่อ') + '.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });
