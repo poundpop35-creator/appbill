@@ -166,7 +166,6 @@
     </div>
 
     <script>
-        // เคลียร์ข้อมูลแถวสินค้าเริ่มต้นให้ว่าง เพื่อให้ผู้ใช้เปิดมากดพิมพ์ใหม่ได้เลย
         let itemsData = [
             { no: "1", desc: "", qty: "", unit: "ชุด", price: "" }
         ];
@@ -179,7 +178,10 @@
                 const card = document.createElement('div');
                 card.className = 'mobile-card relative';
                 
-                const currentTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+                // แก้ไข Logic การแสดงผลราคาสุทธิบนการ์ดควบคุมให้ดึงค่าล่าสุดจากตัวแปรตรงๆ
+                const q = parseFloat(item.qty) || 0;
+                const p = parseFloat(item.price) || 0;
+                const currentTotal = q * p;
                 
                 card.innerHTML = `
                     <div class="absolute top-2 right-2 cursor-pointer text-red-500 font-bold bg-red-100 px-2 py-1 rounded text-xs" onclick="removeItem(${index})">X ลบ</div>
@@ -194,7 +196,7 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">จำนวน (ตัวเลข):</label>
-                            <input type="number" value="${item.qty}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', this.value)">
+                            <input type="number" value="${item.qty}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', this.value); updateCardTotal(${index});">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">หน่วยนับ:</label>
@@ -202,17 +204,29 @@
                         </div>
                         <div>
                             <label class="text-xs text-gray-500">ราคาต่อหน่วย:</label>
-                            <input type="number" value="${item.price}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', this.value)">
+                            <input type="number" value="${item.price}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', this.value); updateCardTotal(${index});">
                         </div>
                         <div>
                             <label class="text-xs text-gray-500 font-bold text-blue-600">ราคาสุทธิ:</label>
-                            <div class="w-full bg-blue-50 p-1 rounded text-sm font-bold text-blue-600 border border-blue-200">${currentTotal.toLocaleString()} บาท</div>
+                            <div id="card-total-${index}" class="w-full bg-blue-50 p-1 rounded text-sm font-bold text-blue-600 border border-blue-200">${currentTotal.toLocaleString()} บาท</div>
                         </div>
                     </div>
                 `;
                 container.appendChild(card);
             });
             calculateAllTotals();
+        }
+
+        // ฟังก์ชันช่วยอัปเดตราคาสุทธิเฉพาะบนกล่องการ์ดแบบทันที
+        function updateCardTotal(index) {
+            const item = itemsData[index];
+            const q = parseFloat(item.qty) || 0;
+            const p = parseFloat(item.price) || 0;
+            const currentTotal = q * p;
+            const cardTotalDiv = document.getElementById(`card-total-${index}`);
+            if (cardTotalDiv) {
+                cardTotalDiv.innerText = currentTotal.toLocaleString() + ' บาท';
+            }
         }
 
         function updateItemData(index, field, value) {
