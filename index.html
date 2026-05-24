@@ -303,8 +303,20 @@
     .sidebar { height: auto; position: static; }
     .topbar-brand span:not(:first-child) { display: none; }
     .btn-top span { display: none; }
-    .preview-area { padding: 20px 10px; }
-    .a4-wrapper { width: 100%; padding: 8mm; font-size: 11px; }
+    .preview-area { padding: 16px 0; overflow-x: hidden; }
+
+    /* Scale A4 (794px wide) down to fit viewport */
+    .preview-wrapper {
+      width: 100vw;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+    }
+    .a4-wrapper {
+      transform-origin: top center;
+      transform: scale(var(--a4-scale, 0.45));
+      margin-bottom: calc((297mm * var(--a4-scale, 0.45)) - 297mm);
+    }
   }
 
   /* Animations */
@@ -692,8 +704,29 @@ function downloadImage() {
   });
 }
 
+// Auto-scale A4 on mobile
+function setA4Scale() {
+  const A4_PX = 794;
+  const vw = window.innerWidth;
+  if (vw < 900) {
+    const scale = (vw - 16) / A4_PX;
+    document.documentElement.style.setProperty('--a4-scale', scale.toFixed(4));
+    const wrapper = document.querySelector('.preview-wrapper');
+    const a4 = document.getElementById('receipt-preview');
+    if (wrapper && a4) {
+      wrapper.style.height = Math.round(a4.scrollHeight * scale) + 'px';
+    }
+  } else {
+    document.documentElement.style.setProperty('--a4-scale', '1');
+    const wrapper = document.querySelector('.preview-wrapper');
+    if (wrapper) wrapper.style.height = '';
+  }
+}
+
 // Init
 renderItemsForm();
+setA4Scale();
+window.addEventListener('resize', setA4Scale);
 </script>
 </body>
 </html>
