@@ -1,405 +1,699 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบออกบิลเงินสด</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    
-    <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f3f4f6; }
-        .a4-wrapper {
-            width: 210mm;
-            min-height: 297mm;
-            margin: auto;
-            background: white;
-            padding: 15mm;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        @media print {
-            body { background: white; }
-            .no-print { display: none !important; }
-            .a4-wrapper { box-shadow: none; margin: 0; padding: 0; }
-        }
-        .bill-header { background-color: #0b3d91; color: white; }
-        .table-header { background-color: #0b3d91; color: white; }
-        .mobile-card { background: #fdfdfd; border: 1px solid #e5e7eb; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบออกบิลเงินสด · ร้านปอนด์โลหะ</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --navy: #0f2d5e;
+    --navy-mid: #1a4080;
+    --navy-light: #e8eef8;
+    --accent: #e8a020;
+    --accent-light: #fef3dc;
+    --text: #1a1f2e;
+    --text-muted: #6b7280;
+    --border: #d1d9e8;
+    --surface: #f7f9fc;
+    --white: #ffffff;
+    --danger: #dc2626;
+    --success: #16a34a;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --shadow-sm: 0 1px 3px rgba(15,45,94,0.08);
+    --shadow: 0 4px 16px rgba(15,45,94,0.12);
+    --shadow-lg: 0 8px 32px rgba(15,45,94,0.16);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif;
+    background: var(--surface);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== TOP BAR ===== */
+  .topbar {
+    background: var(--navy);
+    color: white;
+    padding: 0 24px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; }
+  .topbar-brand-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .topbar-actions { display: flex; gap: 8px; }
+  .btn-top {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer;
+    border: none; transition: all .15s ease;
+  }
+  .btn-print { background: rgba(255,255,255,0.12); color: white; }
+  .btn-print:hover { background: rgba(255,255,255,0.22); }
+  .btn-pdf { background: var(--accent); color: #1a0e00; }
+  .btn-pdf:hover { background: #f0b030; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,160,32,0.4); }
+  .btn-img { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-img:hover { background: rgba(255,255,255,0.15); }
+
+  /* ===== LAYOUT ===== */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    gap: 0;
+    min-height: calc(100vh - 56px);
+  }
+
+  /* ===== SIDEBAR FORM ===== */
+  .sidebar {
+    background: white;
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    height: calc(100vh - 56px);
+    position: sticky;
+    top: 56px;
+  }
+  .sidebar-inner { padding: 24px; }
+
+  .section-title {
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    color: var(--navy); text-transform: uppercase;
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .section-title::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  .form-group { margin-bottom: 14px; }
+  .form-label {
+    display: block; font-size: 12px; font-weight: 500;
+    color: var(--text-muted); margin-bottom: 5px;
+  }
+  .form-input {
+    width: 100%; padding: 9px 12px;
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; color: var(--text);
+    background: white; transition: border-color .15s ease;
+    outline: none;
+  }
+  .form-input:focus { border-color: var(--navy-mid); box-shadow: 0 0 0 3px rgba(26,64,128,0.08); }
+  .form-input.readonly {
+    background: var(--surface); color: var(--text-muted);
+    font-weight: 600; cursor: not-allowed;
+  }
+  .form-input-gold {
+    background: var(--accent-light); border-color: #d4911a; color: #7a4800; font-weight: 700;
+  }
+  textarea.form-input { resize: vertical; min-height: 72px; }
+
+  /* ===== TOTAL DISPLAY ===== */
+  .total-display {
+    background: var(--navy);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    color: white;
+  }
+  .total-display-label { font-size: 11px; opacity: .7; margin-bottom: 4px; }
+  .total-display-num { font-size: 28px; font-weight: 700; letter-spacing: -.01em; }
+  .total-display-text { font-size: 12px; opacity: .8; margin-top: 4px; }
+
+  /* ===== ITEM CARDS ===== */
+  .item-card {
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: var(--radius); padding: 14px; margin-bottom: 10px;
+    position: relative; transition: border-color .15s ease;
+  }
+  .item-card:hover { border-color: var(--navy-mid); }
+  .item-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .item-badge {
+    background: var(--navy); color: white; width: 24px; height: 24px;
+    border-radius: 6px; font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .item-subtotal {
+    font-size: 13px; font-weight: 700; color: var(--navy-mid);
+    background: var(--navy-light); padding: 3px 10px; border-radius: 20px;
+  }
+  .btn-remove {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); font-size: 16px; line-height: 1;
+    padding: 2px 6px; border-radius: 4px; transition: all .15s;
+  }
+  .btn-remove:hover { background: #fee2e2; color: var(--danger); }
+  .item-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .item-grid .full { grid-column: 1 / -1; }
+
+  .btn-add {
+    width: 100%; padding: 10px; border: 2px dashed var(--border);
+    background: none; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; font-weight: 600;
+    color: var(--navy-mid); cursor: pointer; transition: all .15s;
+    margin-bottom: 20px;
+  }
+  .btn-add:hover { border-color: var(--navy-mid); background: var(--navy-light); }
+
+  /* ===== PREVIEW AREA ===== */
+  .preview-area {
+    background: #e2e6ee;
+    padding: 40px 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow-y: auto;
+  }
+  .preview-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .1em;
+    color: #8994a8; text-transform: uppercase; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .preview-label::before, .preview-label::after {
+    content: ''; flex: 1; height: 1px; background: #c4cad6;
+  }
+  .preview-wrapper { width: 100%; max-width: 760px; }
+
+  /* ===== A4 DOCUMENT ===== */
+  .a4-wrapper {
+    width: 210mm;
+    min-height: 297mm;
+    background: white;
+    padding: 16mm 14mm;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    font-family: 'Sarabun', sans-serif;
+    font-size: 13px;
+    position: relative;
+    margin: 0 auto;
+  }
+
+  .doc-header-strip {
+    display: flex; justify-content: space-between; align-items: stretch;
+    margin-bottom: 14px;
+  }
+  .doc-header-issuer { flex: 1; }
+  .doc-header-issuer h1 { font-size: 17px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+  .doc-header-issuer p { font-size: 11.5px; color: #444; line-height: 1.5; }
+  .doc-title-block {
+    background: var(--navy);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-width: 130px;
+  }
+  .doc-title-block .doc-title { font-size: 18px; font-weight: 700; letter-spacing: .03em; }
+  .doc-title-block .doc-subtitle { font-size: 10px; opacity: .7; margin-top: 2px; }
+
+  .doc-divider { border: none; border-top: 1.5px solid var(--navy); margin: 10px 0; }
+
+  .doc-meta-grid {
+    display: grid; grid-template-columns: 1fr auto;
+    gap: 12px; margin-bottom: 14px;
+  }
+  .doc-meta-right {
+    border-left: 1.5px solid var(--border);
+    padding-left: 14px; min-width: 160px;
+  }
+  .meta-row { margin-bottom: 4px; font-size: 12px; line-height: 1.5; }
+  .meta-row strong { color: var(--navy); }
+
+  /* A4 TABLE */
+  .doc-table {
+    width: 100%; border-collapse: collapse;
+    margin-bottom: 12px;
+    font-size: 12.5px;
+  }
+  .doc-table thead tr th {
+    background: var(--navy); color: white;
+    padding: 7px 8px; text-align: center;
+    font-weight: 600; font-size: 12px;
+  }
+  .doc-table thead tr th:nth-child(2) { text-align: left; padding-left: 12px; }
+  .doc-table tbody tr td {
+    border-bottom: 1px solid #e8ecf3;
+    padding: 8px;
+    text-align: center;
+    vertical-align: top;
+  }
+  .doc-table tbody tr td:nth-child(2) { text-align: left; padding-left: 12px; }
+  .doc-table tbody tr:hover td { background: var(--navy-light); }
+
+  .doc-remarks-row td { background: #fff8f0 !important; }
+  .doc-remarks-label { font-size: 10.5px; font-weight: 700; color: #b45309; }
+  .doc-remarks-text { font-size: 11.5px; color: #78350f; white-space: pre-line; }
+
+  .doc-spacer td { height: 80px; }
+
+  /* TOTALS + SIGNATURE */
+  .doc-footer-row {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-top: 8px;
+  }
+  .doc-deco-dots { display: flex; gap: 6px; align-items: center; }
+  .doc-deco-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+  }
+
+  .doc-total-table {
+    border-collapse: collapse; min-width: 260px;
+  }
+  .doc-total-table td {
+    border: 1px solid var(--border);
+    padding: 6px 10px; font-size: 12.5px;
+  }
+  .doc-total-table .lbl { text-align: right; font-weight: 600; color: var(--navy); width: 50%; }
+  .doc-total-table .val { text-align: right; }
+  .doc-total-table .total-row td { background: var(--navy); color: white; font-weight: 700; }
+  .doc-total-table .text-row td { background: var(--accent-light); color: #7a4800; font-weight: 600; text-align: center; font-size: 11.5px; }
+
+  .doc-signature {
+    border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px 18px; width: 200px; text-align: center;
+    margin-top: 16px;
+  }
+  .doc-signature-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 28px; }
+  .doc-signature-line { border-top: 1px dashed var(--border); padding-top: 6px; font-size: 11.5px; }
+
+  /* ===== PRINT ===== */
+  @media print {
+    .topbar, .sidebar, .preview-label, .preview-area > *:not(.preview-wrapper) { display: none !important; }
+    body, .main-layout { display: block !important; background: white; }
+    .preview-area { background: white; padding: 0; }
+    .a4-wrapper { box-shadow: none; margin: 0; width: 100%; }
+  }
+
+  /* ===== MOBILE ===== */
+  @media (max-width: 900px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar { height: auto; position: static; }
+    .topbar-brand span:not(:first-child) { display: none; }
+    .btn-top span { display: none; }
+    .preview-area { padding: 20px 10px; }
+    .a4-wrapper { width: 100%; padding: 8mm; font-size: 11px; }
+  }
+
+  /* Animations */
+  .item-card { animation: slideIn .2s ease; }
+  @keyframes slideIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
 </head>
-<body class="p-2 md:p-8 flex flex-col items-center">
+<body>
 
-    <div class="no-print w-full max-w-4xl bg-white p-4 md:p-6 rounded-lg shadow-md mb-8">
-        <h2 class="text-xl font-bold mb-4 border-b pb-2">📝 กรอกข้อมูลบิล (ระบบคำนวณอัตโนมัติ)</h2>
-        
-        <h3 class="font-bold text-blue-800 mb-2 mt-4">1. ข้อมูลลูกค้า</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-            <div>
-                <label class="block text-sm text-gray-600">ชื่อลูกค้า:</label>
-                <input type="text" id="in-customer-name" value="" placeholder="เช่น บริษัท บี.เค.สปอร์ตคอมเพล็กซ์ จำกัด" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">ที่อยู่ลูกค้า:</label>
-                <input type="text" id="in-customer-addr" value="" placeholder="เช่น 126/2 หมู่ 4 ต.บางกุ้ง อ.เมือง จ.สุราษฎร์ธานี" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">เลขประจำตัวผู้เสียภาษี:</label>
-                <input type="text" id="in-tax-id" value="" placeholder="เช่น 0845568014224" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">ชื่องาน:</label>
-                <input type="text" id="in-job-name" value="" placeholder="เช่น ติดตั้งประตูยืด" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
-            </div>
-            <div>
-                <label class="block text-sm text-gray-600">วันที่:</label>
-                <input type="text" id="in-date" value="" placeholder="เช่น 19 พฤษภาคม 2569" class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()">
-            </div>
-        </div>
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-brand-dot"></div>
+    <span>ระบบออกบิลเงินสด</span>
+    <span style="opacity:.4; font-weight:300">|</span>
+    <span style="opacity:.6; font-weight:400; font-size:13px">ร้านปอนด์โลหะ</span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
+    <button class="btn-top btn-print" onclick="window.print()">🖨️ <span>พิมพ์</span></button>
+    <button class="btn-top btn-pdf" onclick="downloadPDF()">📥 <span>โหลด PDF</span></button>
+  </div>
+</header>
 
-        <div class="flex justify-between items-end mb-2 mt-6 border-b pb-2">
-            <h3 class="font-bold text-blue-800">2. รายการสินค้า</h3>
-            <button onclick="addItem()" class="bg-blue-100 text-blue-700 px-3 py-1 rounded text-sm font-bold shadow-sm hover:bg-blue-200">+ เพิ่มรายการ</button>
-        </div>
-        
-        <div id="items-form-container"></div>
+<!-- LAYOUT -->
+<div class="main-layout">
 
-        <h3 class="font-bold text-blue-800 mb-2 mt-6 border-b pb-2">3. สรุปยอดและหมายเหตุ</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-            <div class="md:col-span-2">
-                <label class="block text-sm text-gray-600">หมายเหตุ (เช่น เงื่อนไขมัดจำ):</label>
-                <textarea id="in-remarks" rows="3" placeholder="1. ตกลงทำ มัดจำสั่งของ...&#10;2. ของมาก่อนเข้าไปติดตั้ง..." class="w-full border border-gray-300 p-2 rounded focus:outline-blue-500" oninput="updatePreview()"></textarea>
-            </div>
-            
-            <div>
-                <label class="block text-sm text-gray-600 font-bold text-gray-400">จำนวนเงินรวมทั้งสิ้น (คำนวณอัตโนมัติ):</label>
-                <input type="text" id="in-total-num" value="0" class="w-full border border-gray-300 bg-gray-100 p-2 rounded font-bold text-gray-500" readonly>
-            </div>
-            
-            <div>
-                <label class="block text-sm text-gray-600 font-bold text-gray-400">จำนวนเงินรวมตัวอักษร (คำนวณอัตโนมัติ):</label>
-                <input type="text" id="in-total-text" value="ศูนย์บาทถ้วน" class="w-full border border-gray-300 bg-gray-100 p-2 rounded font-bold text-gray-500" readonly>
-            </div>
-        </div>
+  <!-- SIDEBAR FORM -->
+  <aside class="sidebar">
+    <div class="sidebar-inner">
 
-        <div class="flex flex-col md:flex-row justify-end mt-8 gap-3 border-t pt-4">
-            <button onclick="window.print()" class="w-full md:w-auto bg-green-600 text-white px-6 py-3 rounded shadow font-bold hover:bg-green-700">🖨️ พิมพ์บิล</button>
-            <button onclick="downloadPDF()" class="w-full md:w-auto bg-blue-600 text-white px-6 py-3 rounded shadow font-bold hover:bg-blue-700">📥 โหลด PDF</button>
-            <button onclick="downloadImage()" class="w-full md:w-auto bg-purple-600 text-white px-6 py-3 rounded shadow font-bold hover:bg-purple-700">🖼️ โหลดรูปภาพ</button>
+      <!-- ข้อมูลลูกค้า -->
+      <div class="section-title">ข้อมูลลูกค้า</div>
+
+      <div class="form-group">
+        <label class="form-label">ชื่อลูกค้า / บริษัท</label>
+        <input type="text" id="in-customer-name" class="form-input"
+          placeholder="เช่น บริษัท บี.เค.สปอร์ตคอมเพล็กซ์ จำกัด" oninput="updatePreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">ที่อยู่</label>
+        <input type="text" id="in-customer-addr" class="form-input"
+          placeholder="เช่น 126/2 หมู่ 4 ต.บางกุ้ง อ.เมือง จ.สุราษฎร์ธานี" oninput="updatePreview()">
+      </div>
+      <div class="form-group">
+        <label class="form-label">เลขประจำตัวผู้เสียภาษี</label>
+        <input type="text" id="in-tax-id" class="form-input"
+          placeholder="เช่น 0845568014224" oninput="updatePreview()">
+      </div>
+
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px">
+        <div class="form-group">
+          <label class="form-label">ชื่องาน / โครงการ</label>
+          <input type="text" id="in-job-name" class="form-input"
+            placeholder="เช่น ติดตั้งประตูยืด" oninput="updatePreview()">
         </div>
+        <div class="form-group">
+          <label class="form-label">วันที่</label>
+          <input type="text" id="in-date" class="form-input"
+            placeholder="เช่น 19 พ.ค. 2569" oninput="updatePreview()">
+        </div>
+      </div>
+
+      <!-- รายการสินค้า -->
+      <div class="section-title" style="margin-top:8px">รายการสินค้า / บริการ</div>
+      <div id="items-form-container"></div>
+      <button class="btn-add" onclick="addItem()">+ เพิ่มรายการ</button>
+
+      <!-- หมายเหตุ -->
+      <div class="section-title">หมายเหตุ</div>
+      <div class="form-group">
+        <textarea id="in-remarks" class="form-input"
+          placeholder="เช่น&#10;1. ตกลงทำ มัดจำสั่งของ...&#10;2. ของมาก่อนเข้าไปติดตั้ง..."
+          oninput="updatePreview()"></textarea>
+      </div>
+
+      <!-- ยอดรวม -->
+      <div class="total-display">
+        <div class="total-display-label">ยอดรวมทั้งสิ้น</div>
+        <div class="total-display-num" id="display-total-num">0 บาท</div>
+        <div class="total-display-text" id="display-total-text">ศูนย์บาทถ้วน</div>
+      </div>
+
     </div>
+  </aside>
 
-    <div class="w-full overflow-x-auto no-print mb-2 text-center text-gray-500 text-sm">
-        👇 พรีวิวเอกสารด้านล่าง (เลื่อนซ้ายขวาได้) 👇
-    </div>
+  <!-- PREVIEW -->
+  <main class="preview-area">
+    <div class="preview-label" style="width:100%; max-width:760px">ตัวอย่างเอกสาร (A4)</div>
 
-    <div id="receipt-preview" class="a4-wrapper relative text-sm bg-white">
-        <div class="flex justify-between items-start mb-6">
-            <div class="flex gap-2 mt-2">
-                <div class="w-3 h-3 rounded-full bg-blue-800"></div><div class="w-3 h-3 rounded-full bg-blue-800"></div><div class="w-3 h-3 rounded-full bg-blue-800"></div><div class="w-3 h-3 rounded-full bg-blue-800"></div><div class="w-3 h-3 rounded-full bg-blue-800"></div>
-            </div>
-            <div class="bill-header px-12 py-2 text-xl font-bold rounded-l-md">บิลเงินสด</div>
+    <div class="preview-wrapper">
+      <div id="receipt-preview" class="a4-wrapper">
+
+        <!-- HEADER -->
+        <div class="doc-header-strip">
+          <div class="doc-header-issuer">
+            <h1>วิษณุ เพชรณิชกุล</h1>
+            <p>ร้านปอนด์โลหะ · 53 ม.3 ต.ท่าฉาง อ.ท่าฉาง จ.สุราษฎร์ธานี 84150</p>
+            <p>โทร: 066-1499252</p>
+          </div>
+          <div class="doc-title-block">
+            <div class="doc-title">บิลเงินสด</div>
+            <div class="doc-subtitle">CASH RECEIPT</div>
+          </div>
         </div>
 
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-2">
-                <p><strong>ผู้ออกใบ:</strong> วิษณุ เพชรณิชกุล (ร้านปอนด์โลหะ)</p>
-                <p><strong>ที่อยู่:</strong> 53 ม.3 ต.ท่าฉาง อ.ท่าฉาง จ. สุราษฎร์ธานี 84150</p>
-            </div>
-            <div class="text-right pr-4"><p><strong>โทร:</strong> 066-1499252</p></div>
+        <hr class="doc-divider">
+
+        <!-- CUSTOMER INFO -->
+        <div class="doc-meta-grid">
+          <div>
+            <div class="meta-row"><strong>นามลูกค้า:</strong> <span id="out-customer-name"></span></div>
+            <div class="meta-row"><strong>ที่อยู่:</strong> <span id="out-customer-addr"></span></div>
+            <div class="meta-row"><strong>เลขประจำตัวผู้เสียภาษี:</strong> <span id="out-tax-id"></span></div>
+          </div>
+          <div class="doc-meta-right">
+            <div class="meta-row"><strong>วันที่:</strong> <span id="out-date"></span></div>
+            <div style="border-top:1px solid var(--border); margin: 6px 0;"></div>
+            <div class="meta-row"><strong>ชื่องาน:</strong> <span id="out-job-name"></span></div>
+          </div>
         </div>
 
-        <hr class="border-gray-300 mb-4">
-
-        <div class="grid grid-cols-3 gap-4 mb-4">
-            <div class="col-span-2">
-                <p><strong>นามลูกค้า:</strong> <span id="out-customer-name"></span></p>
-                <p><strong>ที่อยู่:</strong> <span id="out-customer-addr"></span></p>
-                <p><strong>เลขประจำตัวผู้เสียภาษี:</strong> <span id="out-tax-id"></span></p>
-            </div>
-            <div class="border-l border-gray-300 pl-4">
-                <p><strong>วันที่:</strong> <span id="out-date"></span></p>
-                <hr class="my-2 border-gray-300">
-                <p><strong>ชื่องาน:</strong> <span id="out-job-name"></span></p>
-            </div>
-        </div>
-
-        <table class="w-full border-collapse border border-gray-300 mb-4">
-            <thead>
-                <tr class="table-header text-center">
-                    <th class="border border-gray-300 py-2 w-16">ลำดับ</th>
-                    <th class="border border-gray-300 py-2 text-left px-4">รายการ</th>
-                    <th class="border border-gray-300 py-2 w-28">จำนวน</th>
-                    <th class="border border-gray-300 py-2 w-28">ราคา</th>
-                    <th class="border border-gray-300 py-2 w-28">ราคาสุทธิ</th>
-                </tr>
-            </thead>
-            <tbody class="text-center" id="out-items-tbody"></tbody>
+        <!-- TABLE -->
+        <table class="doc-table">
+          <thead>
+            <tr>
+              <th style="width:44px">ลำดับ</th>
+              <th>รายการสินค้า / บริการ</th>
+              <th style="width:90px">จำนวน</th>
+              <th style="width:90px">ราคา/หน่วย</th>
+              <th style="width:100px">ราคาสุทธิ</th>
+            </tr>
+          </thead>
+          <tbody id="out-items-tbody"></tbody>
         </table>
 
-        <div class="flex justify-between items-end">
-            <div class="flex gap-2 mb-2">
-                <div class="w-5 h-5 rounded-full border-2 border-blue-800"></div><div class="w-5 h-5 rounded-full border-2 border-blue-800 bg-blue-100 border-dotted"></div><div class="w-5 h-5 rounded-full bg-blue-800"></div><div class="w-5 h-5 rounded-full bg-blue-800"></div><div class="w-5 h-5 rounded-full border-2 border-blue-800"></div>
+        <!-- FOOTER -->
+        <div class="doc-footer-row">
+          <div>
+            <div class="doc-deco-dots">
+              <div class="doc-deco-dot" style="background:var(--navy)"></div>
+              <div class="doc-deco-dot" style="background:var(--navy); opacity:.5"></div>
+              <div class="doc-deco-dot" style="border:2px solid var(--navy)"></div>
+              <div class="doc-deco-dot" style="background:var(--accent)"></div>
+              <div class="doc-deco-dot" style="border:2px solid var(--navy); opacity:.4"></div>
             </div>
-            
-            <div class="w-1/2 min-w-[250px]">
-                <table class="w-full border-collapse border border-gray-300">
-                    <tr>
-                        <td class="border border-gray-300 py-1 px-4 text-right font-bold w-1/2">จำนวนเงินรวมทั้งสิ้น</td>
-                        <td id="out-total-num" class="border border-gray-300 py-1 px-4 text-right">0</td>
-                    </tr>
-                    <tr class="bg-blue-100">
-                        <td class="border border-gray-300 py-1 px-4 text-right font-bold">จำนวนเงินรวมทั้งสิ้น</td>
-                        <td id="out-total-text" class="border border-gray-300 py-1 px-4 text-center text-sm text-gray-700">ศูนย์บาทถ้วน</td>
-                    </tr>
-                </table>
+            <div class="doc-signature" style="margin-top:12px">
+              <div class="doc-signature-label">ผู้เสนอราคา</div>
+              <div class="doc-signature-line">วิษณุ เพชรณิชกุล</div>
             </div>
+          </div>
+
+          <table class="doc-total-table">
+            <tr>
+              <td class="lbl">รวมเป็นเงิน</td>
+              <td class="val" id="out-total-num" style="min-width:110px">0</td>
+            </tr>
+            <tr class="total-row">
+              <td class="lbl" style="color:white">ยอดรวมทั้งสิ้น</td>
+              <td class="val" id="out-total-num2">0</td>
+            </tr>
+            <tr class="text-row">
+              <td colspan="2" id="out-total-text">ศูนย์บาทถ้วน</td>
+            </tr>
+          </table>
         </div>
 
-        <div class="absolute bottom-12 right-12 border rounded-xl p-4 w-64 text-center bg-white">
-            <p class="font-bold mb-6">ผู้เสนอราคา</p>
-            <div class="border-b border-gray-300 border-dotted mb-2 h-6"></div>
-            <p>วิษณุ เพชรณิชกุล</p>
-            <div class="border-b border-gray-300 border-dotted mt-2 h-2 w-full"></div>
-        </div>
+      </div><!-- /a4-wrapper -->
     </div>
+  </main>
 
-    <script>
-        let itemsData = [
-            { no: "1", desc: "", qty: "", unit: "ชุด", price: "" }
-        ];
+</div><!-- /main-layout -->
 
-        function renderItemsForm() {
-            const container = document.getElementById('items-form-container');
-            container.innerHTML = '';
-            
-            itemsData.forEach((item, index) => {
-                const card = document.createElement('div');
-                card.className = 'mobile-card relative';
-                
-                // แก้ไข Logic การแสดงผลราคาสุทธิบนการ์ดควบคุมให้ดึงค่าล่าสุดจากตัวแปรตรงๆ
-                const q = parseFloat(item.qty) || 0;
-                const p = parseFloat(item.price) || 0;
-                const currentTotal = q * p;
-                
-                card.innerHTML = `
-                    <div class="absolute top-2 right-2 cursor-pointer text-red-500 font-bold bg-red-100 px-2 py-1 rounded text-xs" onclick="removeItem(${index})">X ลบ</div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-2 pr-12">
-                        <div>
-                            <label class="text-xs text-gray-500">ลำดับ:</label>
-                            <input type="text" value="${item.no}" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'no', this.value)">
-                        </div>
-                        <div class="col-span-1 md:col-span-3">
-                            <label class="text-xs text-gray-500">รายละเอียดสินค้า/บริการ:</label>
-                            <input type="text" value="${item.desc}" placeholder="เช่น ค่าของ ประตูยืด เฉพาะบังตา สีขาว" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'desc', this.value)">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-500">จำนวน (ตัวเลข):</label>
-                            <input type="number" value="${item.qty}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'qty', this.value); updateCardTotal(${index});">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-500">หน่วยนับ:</label>
-                            <input type="text" value="${item.unit || 'ชุด'}" placeholder="ชุด / บาน / ลัง" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'unit', this.value)">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-500">ราคาต่อหน่วย:</label>
-                            <input type="number" value="${item.price}" placeholder="0" class="w-full border p-1 rounded text-sm" oninput="updateItemData(${index}, 'price', this.value); updateCardTotal(${index});">
-                        </div>
-                        <div>
-                            <label class="text-xs text-gray-500 font-bold text-blue-600">ราคาสุทธิ:</label>
-                            <div id="card-total-${index}" class="w-full bg-blue-50 p-1 rounded text-sm font-bold text-blue-600 border border-blue-200">${currentTotal.toLocaleString()} บาท</div>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
-            calculateAllTotals();
-        }
+<script>
+let itemsData = [
+  { no: "1", desc: "", qty: "", unit: "ชุด", price: "" }
+];
 
-        // ฟังก์ชันช่วยอัปเดตราคาสุทธิเฉพาะบนกล่องการ์ดแบบทันที
-        function updateCardTotal(index) {
-            const item = itemsData[index];
-            const q = parseFloat(item.qty) || 0;
-            const p = parseFloat(item.price) || 0;
-            const currentTotal = q * p;
-            const cardTotalDiv = document.getElementById(`card-total-${index}`);
-            if (cardTotalDiv) {
-                cardTotalDiv.innerText = currentTotal.toLocaleString() + ' บาท';
-            }
-        }
+function renderItemsForm() {
+  const container = document.getElementById('items-form-container');
+  container.innerHTML = '';
+  itemsData.forEach((item, index) => {
+    const q = parseFloat(item.qty) || 0;
+    const p = parseFloat(item.price) || 0;
+    const subtotal = q * p;
+    const card = document.createElement('div');
+    card.className = 'item-card';
+    card.innerHTML = `
+      <div class="item-card-header">
+        <div class="item-badge">${item.no || index+1}</div>
+        <div class="item-subtotal">${subtotal > 0 ? subtotal.toLocaleString() + ' ฿' : '—'}</div>
+        <button class="btn-remove" onclick="removeItem(${index})" title="ลบรายการ">✕</button>
+      </div>
+      <div class="item-grid">
+        <div class="full">
+          <label class="form-label">รายละเอียดสินค้า / บริการ</label>
+          <input type="text" value="${item.desc}" placeholder="เช่น ประตูยืด เฉพาะบังตา สีขาว"
+            class="form-input" oninput="updateItemData(${index}, 'desc', this.value)">
+        </div>
+        <div>
+          <label class="form-label">จำนวน</label>
+          <input type="number" value="${item.qty}" placeholder="0"
+            class="form-input" oninput="updateItemData(${index}, 'qty', this.value)">
+        </div>
+        <div>
+          <label class="form-label">หน่วย</label>
+          <input type="text" value="${item.unit || 'ชุด'}" placeholder="ชุด / บาน / ลัง"
+            class="form-input" oninput="updateItemData(${index}, 'unit', this.value)">
+        </div>
+        <div>
+          <label class="form-label">ราคาต่อหน่วย (บาท)</label>
+          <input type="number" value="${item.price}" placeholder="0"
+            class="form-input" oninput="updateItemData(${index}, 'price', this.value)">
+        </div>
+        <div>
+          <label class="form-label">ราคาสุทธิ</label>
+          <input type="text" value="${subtotal > 0 ? subtotal.toLocaleString() : ''}"
+            class="form-input readonly" readonly placeholder="คำนวณอัตโนมัติ">
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+  calculateAllTotals();
+}
 
-        function updateItemData(index, field, value) {
-            itemsData[index][field] = value;
-            if (field === 'qty' || field === 'price' || field === 'unit') {
-                calculateAllTotals();
-            } else {
-                updatePreview();
-            }
-        }
+function updateItemData(index, field, value) {
+  itemsData[index][field] = value;
+  // Update subtotal input instantly
+  const card = document.getElementById('items-form-container').children[index];
+  if (card && (field === 'qty' || field === 'price')) {
+    const q = parseFloat(itemsData[index].qty) || 0;
+    const p = parseFloat(itemsData[index].price) || 0;
+    const subtotal = q * p;
+    const badge = card.querySelector('.item-subtotal');
+    const readonlyInput = card.querySelectorAll('.form-input.readonly')[0];
+    if (badge) badge.textContent = subtotal > 0 ? subtotal.toLocaleString() + ' ฿' : '—';
+    if (readonlyInput) readonlyInput.value = subtotal > 0 ? subtotal.toLocaleString() : '';
+  }
+  calculateAllTotals();
+}
 
-        function addItem() {
-            const nextNo = itemsData.length + 1;
-            itemsData.push({ no: nextNo.toString(), desc: "", qty: "", unit: "ชุด", price: "" });
-            renderItemsForm();
-        }
+function addItem() {
+  const nextNo = (itemsData.length + 1).toString();
+  itemsData.push({ no: nextNo, desc: "", qty: "", unit: "ชุด", price: "" });
+  renderItemsForm();
+  // Scroll to new item
+  setTimeout(() => {
+    const container = document.getElementById('items-form-container');
+    const last = container.lastElementChild;
+    if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 50);
+}
 
-        function removeItem(index) {
-            if(confirm('ต้องการลบรายการนี้ใช่หรือไม่?')){
-                itemsData.splice(index, 1);
-                renderItemsForm();
-            }
-        }
+function removeItem(index) {
+  if (itemsData.length === 1) {
+    // Reset instead of removing last item
+    itemsData[0] = { no: "1", desc: "", qty: "", unit: "ชุด", price: "" };
+    renderItemsForm();
+    return;
+  }
+  itemsData.splice(index, 1);
+  // Re-number
+  itemsData.forEach((item, i) => { item.no = (i + 1).toString(); });
+  renderItemsForm();
+}
 
-        function calculateAllTotals() {
-            let grandTotal = 0;
-            
-            itemsData.forEach(item => {
-                const q = parseFloat(item.qty) || 0;
-                const p = parseFloat(item.price) || 0;
-                grandTotal += q * p;
-            });
+function calculateAllTotals() {
+  let grandTotal = 0;
+  itemsData.forEach(item => {
+    grandTotal += (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+  });
+  const formatted = grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 0 });
+  const textNum = ArabicNumberToText(grandTotal.toString());
 
-            const formattedTotal = grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 0 });
-            
-            document.getElementById('in-total-num').value = formattedTotal;
-            document.getElementById('in-total-text').value = ArabicNumberToText(grandTotal.toString());
+  document.getElementById('display-total-num').textContent = formatted + ' บาท';
+  document.getElementById('display-total-text').textContent = textNum;
+  updatePreview();
+}
 
-            updatePreview();
-        }
+function updatePreview() {
+  document.getElementById('out-customer-name').textContent = document.getElementById('in-customer-name').value;
+  document.getElementById('out-customer-addr').textContent = document.getElementById('in-customer-addr').value;
+  document.getElementById('out-tax-id').textContent = document.getElementById('in-tax-id').value;
+  document.getElementById('out-job-name').textContent = document.getElementById('in-job-name').value;
+  document.getElementById('out-date').textContent = document.getElementById('in-date').value;
 
-        function ArabicNumberToText(Number) {
-            Number = Number.replace(/[, ]/g, '');
-            if (isNaN(Number) || Number === '' || parseFloat(Number) === 0) return 'ศูนย์บาทถ้วน';
-            
-            Number = parseFloat(Number).toFixed(2);
-            let txtNumArr = ['ศูนย์', 'หนึ่ง', 'สอง', 'สาม', 'สี่', 'ห้า', 'หก', 'เจ็ด', 'แปด', 'เก้า'];
-            let txtDigitArr = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน', 'ล้าน'];
-            let BahtText = '';
-            let splitNum = Number.split('.');
-            let intVal = splitNum[0];
-            let decVal = splitNum[1];
+  let grandTotal = 0;
+  itemsData.forEach(item => { grandTotal += (parseFloat(item.qty)||0) * (parseFloat(item.price)||0); });
+  const formatted = grandTotal.toLocaleString('th-TH');
+  const textNum = ArabicNumberToText(grandTotal.toString());
 
-            if (intVal != '0') {
-                for (let i = 0; i < intVal.length; i++) {
-                    let n = intVal.substring(i, i + 1);
-                    if (n != '0') {
-                        if ((i == (intVal.length - 1)) && (n == '1') && intVal.length > 1) {
-                            BahtText += 'เอ็ด';
-                        } else if ((i == (intVal.length - 2)) && (n == '2')) {
-                            BahtText += 'ยี่สิบ';
-                        } else if ((i == (intVal.length - 2)) && (n == '1')) {
-                            BahtText += 'สิบ';
-                        } else {
-                            BahtText += txtNumArr[n] + txtDigitArr[intVal.length - i - 1];
-                        }
-                    }
-                }
-                BahtText += 'บาท';
-            }
+  document.getElementById('out-total-num').textContent = formatted + ' บาท';
+  document.getElementById('out-total-num2').textContent = formatted + ' บาท';
+  document.getElementById('out-total-text').textContent = textNum;
 
-            if (decVal == '00') {
-                BahtText += 'ถ้วน';
-            } else {
-                for (let i = 0; i < decVal.length; i++) {
-                    let n = decVal.substring(i, i + 1);
-                    if (n != '0') {
-                        if ((i == (decVal.length - 1)) && (n == '1') && decVal[0] != '0') {
-                            BahtText += 'เอ็ด';
-                        } else if ((i == (decVal.length - 2)) && (n == '2')) {
-                            BahtText += 'ยี่สิบ';
-                        } else if ((i == (decVal.length - 2)) && (n == '1')) {
-                            BahtText += 'สิบ';
-                        } else {
-                            BahtText += txtNumArr[n] + txtDigitArr[decVal.length - i - 1];
-                        }
-                    }
-                }
-                BahtText += 'สตางค์';
-            }
-            return BahtText;
-        }
+  const tbody = document.getElementById('out-items-tbody');
+  let html = '';
+  itemsData.forEach(item => {
+    const q = parseFloat(item.qty) || 0;
+    const p = parseFloat(item.price) || 0;
+    const rowTotal = q * p;
+    html += `<tr>
+      <td>${item.no}</td>
+      <td>${item.desc}</td>
+      <td>${item.qty ? item.qty + ' ' + (item.unit || 'ชุด') : ''}</td>
+      <td>${p ? p.toLocaleString() : ''}</td>
+      <td>${rowTotal ? rowTotal.toLocaleString() : ''}</td>
+    </tr>`;
+  });
 
-        function updatePreview() {
-            document.getElementById('out-customer-name').innerText = document.getElementById('in-customer-name').value;
-            document.getElementById('out-customer-addr').innerText = document.getElementById('in-customer-addr').value;
-            document.getElementById('out-tax-id').innerText = document.getElementById('in-tax-id').value;
-            document.getElementById('out-job-name').innerText = document.getElementById('in-job-name').value;
-            document.getElementById('out-date').innerText = document.getElementById('in-date').value;
-            
-            const finalNum = document.getElementById('in-total-num').value;
-            const finalText = document.getElementById('in-total-text').value;
-            document.getElementById('out-total-num').innerText = finalNum;
-            document.getElementById('out-total-text').innerText = finalText;
+  const remarks = document.getElementById('in-remarks').value;
+  if (remarks.trim()) {
+    html += `<tr class="doc-remarks-row">
+      <td></td>
+      <td colspan="4" style="text-align:left; padding: 8px 12px;">
+        <div class="doc-remarks-label">หมายเหตุ</div>
+        <div class="doc-remarks-text">${remarks}</div>
+      </td>
+    </tr>`;
+  }
+  html += `<tr class="doc-spacer"><td></td><td></td><td></td><td></td><td></td></tr>`;
+  tbody.innerHTML = html;
+}
 
-            const tbody = document.getElementById('out-items-tbody');
-            let tableHTML = '';
-            
-            itemsData.forEach(item => {
-                const q = parseFloat(item.qty) || 0;
-                const p = parseFloat(item.price) || 0;
-                const rowTotal = q * p;
-                
-                tableHTML += `
-                <tr class="align-top">
-                    <td class="border-r border-l border-gray-300 py-2 pt-4">${item.no}</td>
-                    <td class="border-r border-gray-300 py-2 px-4 text-left pt-4">${item.desc}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${item.qty ? item.qty + ' ' + (item.unit || 'ชุด') : ''}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${p ? p.toLocaleString() : ''}</td>
-                    <td class="border-r border-gray-300 py-2 pt-4">${rowTotal ? rowTotal.toLocaleString() : ''}</td>
-                </tr>`;
-            });
+function ArabicNumberToText(Number) {
+  Number = Number.replace(/[, ]/g, '');
+  if (isNaN(Number) || Number === '' || parseFloat(Number) === 0) return 'ศูนย์บาทถ้วน';
+  Number = parseFloat(Number).toFixed(2);
+  const txtNumArr = ['ศูนย์','หนึ่ง','สอง','สาม','สี่','ห้า','หก','เจ็ด','แปด','เก้า'];
+  const txtDigitArr = ['','สิบ','ร้อย','พัน','หมื่น','แสน','ล้าน'];
+  let BahtText = '';
+  const [intVal, decVal] = Number.split('.');
+  if (intVal !== '0') {
+    for (let i = 0; i < intVal.length; i++) {
+      const n = intVal[i];
+      if (n !== '0') {
+        const pos = intVal.length - i - 1;
+        if (pos === 0 && n === '1' && intVal.length > 1) BahtText += 'เอ็ด';
+        else if (pos === 1 && n === '2') BahtText += 'ยี่สิบ';
+        else if (pos === 1 && n === '1') BahtText += 'สิบ';
+        else BahtText += txtNumArr[n] + txtDigitArr[pos];
+      }
+    }
+    BahtText += 'บาท';
+  }
+  if (decVal === '00') {
+    BahtText += 'ถ้วน';
+  } else {
+    for (let i = 0; i < decVal.length; i++) {
+      const n = decVal[i];
+      if (n !== '0') {
+        const pos = decVal.length - i - 1;
+        if (pos === 0 && n === '1' && decVal[0] !== '0') BahtText += 'เอ็ด';
+        else if (pos === 1 && n === '2') BahtText += 'ยี่สิบ';
+        else if (pos === 1 && n === '1') BahtText += 'สิบ';
+        else BahtText += txtNumArr[n] + txtDigitArr[pos];
+      }
+    }
+    BahtText += 'สตางค์';
+  }
+  return BahtText;
+}
 
-            const remarks = document.getElementById('in-remarks').value;
-            if(remarks.trim() !== '') {
-                tableHTML += `
-                <tr class="align-top">
-                    <td class="border-r border-l border-gray-300"></td>
-                    <td class="border-r border-gray-300 py-4 px-4 text-left">
-                        <span class="text-red-500 text-xs font-bold">หมายเหตุ</span><br>
-                        <span class="text-red-500 text-xs whitespace-pre-line">${remarks}</span>
-                    </td>
-                    <td class="border-r border-gray-300"></td>
-                    <td class="border-r border-gray-300"></td>
-                    <td class="border-r border-gray-300"></td>
-                </tr>`;
-            }
+function downloadPDF() {
+  const el = document.getElementById('receipt-preview');
+  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
+  html2pdf().set({
+    margin: 0,
+    filename: `บิลเงินสด_${name}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+  }).from(el).save();
+}
 
-            tableHTML += `
-            <tr class="h-48">
-                <td class="border-r border-l border-gray-300"></td>
-                <td class="border-r border-gray-300"></td>
-                <td class="border-r border-gray-300"></td>
-                <td class="border-r border-gray-300"></td>
-                <td class="border-r border-gray-300"></td>
-            </tr>`;
+function downloadImage() {
+  const el = document.getElementById('receipt-preview');
+  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
+  html2canvas(el, { scale: 2, useCORS: true }).then(canvas => {
+    const a = document.createElement('a');
+    a.download = `บิลเงินสด_${name}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  });
+}
 
-            tbody.innerHTML = tableHTML;
-        }
-
-        renderItemsForm();
-
-        function downloadPDF() {
-            const element = document.getElementById('receipt-preview');
-            const opt = {
-                margin:       0,
-                filename:     'บิลเงินสด_' + (document.getElementById('in-customer-name').value || 'ไม่มีชื่อ') + '.pdf',
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-            html2pdf().set(opt).from(element).save();
-        }
-
-        function downloadImage() {
-            const element = document.getElementById('receipt-preview');
-            html2canvas(element, { scale: 2, useCORS: true }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'บิลเงินสด_' + (document.getElementById('in-customer-name').value || 'ไม่มีชื่อ') + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-            });
-        }
-    </script>
+// Init
+renderItemsForm();
+</script>
 </body>
 </html>
