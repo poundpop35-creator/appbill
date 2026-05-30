@@ -290,11 +290,13 @@
   .doc-signature-line { border-top: 1px dashed var(--border); padding-top: 6px; font-size: 11.5px; }
 
   /* ===== PRINT ===== */
+  @page { size: A4 portrait; margin: 0; }
   @media print {
     .topbar, .sidebar, .preview-label, .preview-area > *:not(.preview-wrapper) { display: none !important; }
     body, .main-layout { display: block !important; background: white; }
     .preview-area { background: white; padding: 0; }
-    .a4-wrapper { box-shadow: none; margin: 0; width: 100%; }
+    .preview-wrapper { display: flex !important; justify-content: center; }
+    .a4-wrapper { box-shadow: none; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; transform: none !important; }
   }
 
   /* ===== MOBILE ===== */
@@ -684,13 +686,21 @@ function ArabicNumberToText(Number) {
 function downloadPDF() {
   const el = document.getElementById('receipt-preview');
   const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
+  // Reset inline transform so html2canvas captures the full-size A4 element
+  const prevTransform = el.style.transform;
+  const prevMarginBottom = el.style.marginBottom;
+  el.style.transform = 'none';
+  el.style.marginBottom = '0';
   html2pdf().set({
     margin: 0,
     filename: `บิลเงินสด_${name}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save();
+  }).from(el).save().then(() => {
+    el.style.transform = prevTransform;
+    el.style.marginBottom = prevMarginBottom;
+  });
 }
 
 function downloadImage() {
