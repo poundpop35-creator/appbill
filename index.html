@@ -491,10 +491,10 @@
             </div>
             <div style="display:flex; gap:14px; margin-top:12px;">
               <div class="doc-signature">
-                <div class="doc-signature-label">ผู้เสนอราคา</div>
+                <div class="doc-signature-label" id="sig-issuer-label">ผู้ออกบิล</div>
                 <div class="doc-signature-line">วิษณุ เพชรณิชกุล</div>
               </div>
-              <div class="doc-signature">
+              <div class="doc-signature" id="sig-approver-box">
                 <div class="doc-signature-label">ผู้อนุมัติซื้อ</div>
                 <div class="doc-signature-line" style="color:transparent">-</div>
               </div>
@@ -781,9 +781,13 @@ function setDocMode(mode) {
   if (mode === 'bill') {
     bill.style.background  = 'var(--navy)';   bill.style.color  = 'white';   bill.style.borderColor  = 'var(--navy)';
     quote.style.background = 'white';         quote.style.color = 'var(--text-muted)'; quote.style.borderColor = 'var(--border)';
+    document.getElementById('sig-issuer-label').textContent = 'ผู้ออกบิล';
+    document.getElementById('sig-approver-box').style.display = 'none';
   } else {
     quote.style.background = 'var(--navy)';  quote.style.color = 'white';   quote.style.borderColor = 'var(--navy)';
     bill.style.background  = 'white';         bill.style.color  = 'var(--text-muted)'; bill.style.borderColor  = 'var(--border)';
+    document.getElementById('sig-issuer-label').textContent = 'ผู้เสนอราคา';
+    document.getElementById('sig-approver-box').style.display = '';
   }
 }
 
@@ -845,6 +849,7 @@ const _today = new Date();
 const _loaded = loadFromStorage();
 if (!_loaded) {
   document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
+  setDocMode('bill');
 }
 renderItemsForm();
 setA4Scale();
