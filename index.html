@@ -405,6 +405,23 @@
         </div>
       </div>
 
+      <!-- ผู้อนุมัติซื้อ (quote mode only) -->
+      <div id="approver-group" style="display:none">
+        <div class="section-title" style="margin-top:4px">ผู้อนุมัติซื้อ</div>
+        <div class="form-group">
+          <label class="form-label">แสดงชื่อ</label>
+          <select id="in-approver-mode" class="form-input" onchange="onApproverModeChange()">
+            <option value="customer">ตามนามลูกค้า</option>
+            <option value="custom">กรอกเอง</option>
+            <option value="blank">เว้นว่าง</option>
+          </select>
+        </div>
+        <div class="form-group" id="approver-custom-group" style="display:none">
+          <label class="form-label">ชื่อผู้อนุมัติซื้อ</label>
+          <input type="text" id="in-approver-name" class="form-input" placeholder="เช่น คุณสมชาย" oninput="updatePreview()">
+        </div>
+      </div>
+
       <!-- รายการสินค้า -->
       <div class="section-title" style="margin-top:8px">รายการสินค้า / บริการ</div>
       <div id="items-form-container"></div>
@@ -638,6 +655,24 @@ function updatePreview() {
   document.getElementById('out-job-name').textContent = document.getElementById('in-job-name').value;
   document.getElementById('out-date').textContent = formatThaiDate(document.getElementById('in-date').value);
 
+  // Update approver name in signature box
+  if (docMode === 'quote') {
+    const mode = document.getElementById('in-approver-mode').value;
+    const line = document.querySelector('#sig-approver-box .doc-signature-line');
+    if (mode === 'customer') {
+      const n = document.getElementById('in-customer-name').value;
+      line.textContent = n || ' ';
+      line.style.color = n ? '' : 'transparent';
+    } else if (mode === 'custom') {
+      const n = document.getElementById('in-approver-name').value;
+      line.textContent = n || ' ';
+      line.style.color = n ? '' : 'transparent';
+    } else {
+      line.textContent = ' ';
+      line.style.color = 'transparent';
+    }
+  }
+
   let grandTotal = 0;
   itemsData.forEach(item => { grandTotal += (parseFloat(item.qty)||0) * (parseFloat(item.price)||0); });
   const formatted = grandTotal.toLocaleString('th-TH');
@@ -785,12 +820,21 @@ function setDocMode(mode) {
     quote.style.background = 'white';         quote.style.color = 'var(--text-muted)'; quote.style.borderColor = 'var(--border)';
     document.getElementById('sig-issuer-label').textContent = 'ผู้ออกบิล';
     document.getElementById('sig-approver-box').style.display = 'none';
+    document.getElementById('approver-group').style.display = 'none';
   } else {
     quote.style.background = 'var(--navy)';  quote.style.color = 'white';   quote.style.borderColor = 'var(--navy)';
     bill.style.background  = 'white';         bill.style.color  = 'var(--text-muted)'; bill.style.borderColor  = 'var(--border)';
     document.getElementById('sig-issuer-label').textContent = 'ผู้เสนอราคา';
     document.getElementById('sig-approver-box').style.display = '';
+    document.getElementById('approver-group').style.display = '';
   }
+  updatePreview();
+}
+
+function onApproverModeChange() {
+  const mode = document.getElementById('in-approver-mode').value;
+  document.getElementById('approver-custom-group').style.display = mode === 'custom' ? '' : 'none';
+  updatePreview();
 }
 
 // No scaling — A4 always renders at full size, scroll on mobile
@@ -810,8 +854,10 @@ function saveToStorage() {
     job:     document.getElementById('in-job-name').value,
     date:    document.getElementById('in-date').value,
     remarks: document.getElementById('in-remarks').value,
-    items:   itemsData,
-    mode:    docMode
+    items:        itemsData,
+    mode:         docMode,
+    approverMode: document.getElementById('in-approver-mode').value,
+    approverName: document.getElementById('in-approver-name').value
   }));
 }
 
@@ -828,6 +874,11 @@ function loadFromStorage() {
     if (d.remarks) document.getElementById('in-remarks').value       = d.remarks;
     if (d.items && d.items.length) itemsData = d.items;
     if (d.mode)    setDocMode(d.mode);
+    if (d.approverMode) {
+      document.getElementById('in-approver-mode').value = d.approverMode;
+      onApproverModeChange();
+    }
+    if (d.approverName) document.getElementById('in-approver-name').value = d.approverName;
     return true;
   } catch { return false; }
 }
@@ -842,6 +893,8 @@ function clearData() {
   const today = new Date();
   document.getElementById('in-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
   itemsData = [{ no: "1", desc: "", qty: "", unit: "ชุด", price: "" }];
+  document.getElementById('in-approver-mode').value = 'customer';
+  document.getElementById('in-approver-name').value = '';
   setDocMode('bill');
   renderItemsForm();
 }
