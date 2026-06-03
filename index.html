@@ -265,7 +265,7 @@
 
   /* TOTALS + SIGNATURE */
   .doc-footer-row {
-    display: flex; flex-direction: column; align-items: flex-start;
+    display: flex; justify-content: space-between; align-items: flex-end;
     margin-top: 8px;
   }
   .doc-deco-dots { display: flex; gap: 6px; align-items: center; }
@@ -472,12 +472,34 @@
           <tbody id="out-items-tbody"></tbody>
         </table>
 
-        <!-- TOTALS — attached right below the items table -->
-        <div style="display:flex; justify-content:flex-end; margin-top:-1px;">
+        <div class="doc-body-spacer"></div>
+
+        <!-- FOOTER -->
+        <div class="doc-footer-row">
+          <div>
+            <div class="doc-deco-dots">
+              <div class="doc-deco-dot" style="background:var(--navy)"></div>
+              <div class="doc-deco-dot" style="background:var(--navy); opacity:.5"></div>
+              <div class="doc-deco-dot" style="border:2px solid var(--navy)"></div>
+              <div class="doc-deco-dot" style="background:var(--accent)"></div>
+              <div class="doc-deco-dot" style="border:2px solid var(--navy); opacity:.4"></div>
+            </div>
+            <div style="display:flex; gap:14px; margin-top:12px;">
+              <div class="doc-signature">
+                <div class="doc-signature-label">ผู้เสนอราคา</div>
+                <div class="doc-signature-line">วิษณุ เพชรณิชกุล</div>
+              </div>
+              <div class="doc-signature">
+                <div class="doc-signature-label">ผู้อนุมัติซื้อ</div>
+                <div class="doc-signature-line" style="color:transparent">-</div>
+              </div>
+            </div>
+          </div>
+
           <table class="doc-total-table">
             <tr>
               <td class="lbl">รวมเป็นเงิน</td>
-              <td class="val" id="out-total-num" style="min-width:120px">0</td>
+              <td class="val" id="out-total-num" style="min-width:110px">0</td>
             </tr>
             <tr class="total-row">
               <td class="lbl" style="color:white">ยอดรวมทั้งสิ้น</td>
@@ -487,29 +509,6 @@
               <td colspan="2" id="out-total-text">ศูนย์บาทถ้วน</td>
             </tr>
           </table>
-        </div>
-
-        <div class="doc-body-spacer"></div>
-
-        <!-- FOOTER -->
-        <div class="doc-footer-row">
-          <div class="doc-deco-dots">
-            <div class="doc-deco-dot" style="background:var(--navy)"></div>
-            <div class="doc-deco-dot" style="background:var(--navy); opacity:.5"></div>
-            <div class="doc-deco-dot" style="border:2px solid var(--navy)"></div>
-            <div class="doc-deco-dot" style="background:var(--accent)"></div>
-            <div class="doc-deco-dot" style="border:2px solid var(--navy); opacity:.4"></div>
-          </div>
-          <div style="display:flex; gap:14px; margin-top:10px;">
-            <div class="doc-signature">
-              <div class="doc-signature-label">ผู้เสนอราคา</div>
-              <div class="doc-signature-line">วิษณุ เพชรณิชกุล</div>
-            </div>
-            <div class="doc-signature">
-              <div class="doc-signature-label">ผู้อนุมัติซื้อ</div>
-              <div class="doc-signature-line" style="color:transparent">-</div>
-            </div>
-          </div>
         </div>
 
       </div><!-- /a4-wrapper -->
@@ -666,6 +665,10 @@ function updatePreview() {
       </td>
     </tr>`;
   }
+  html += `<tr style="border-top:2px solid var(--navy);">
+    <td colspan="4" style="text-align:right; font-weight:700; color:var(--navy); padding:7px 8px; font-size:12.5px;">รวมทั้งหมด</td>
+    <td style="text-align:center; font-weight:700; color:var(--navy); padding:7px 8px; font-size:12.5px;">${grandTotal ? grandTotal.toLocaleString() : '0'}</td>
+  </tr>`;
   tbody.innerHTML = html;
 }
 
