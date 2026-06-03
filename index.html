@@ -190,7 +190,8 @@
   /* ===== A4 DOCUMENT ===== */
   .a4-wrapper {
     width: 210mm;
-    min-height: 297mm;
+    height: 297mm;
+    overflow: hidden;
     background: white;
     padding: 16mm 14mm;
     box-shadow: 0 8px 40px rgba(0,0,0,0.2);
@@ -201,7 +202,7 @@
     display: flex;
     flex-direction: column;
   }
-  .doc-body-spacer { flex: 1; }
+  .doc-body-spacer { flex: 1; min-height: 0; }
 
   .doc-header-strip {
     display: flex; justify-content: space-between; align-items: stretch;
@@ -301,7 +302,7 @@
     .main-layout { display: block !important; background: white !important; }
     .preview-area { display: block !important; background: white !important; padding: 0 !important; margin: 0 !important; }
     .preview-wrapper { display: block !important; width: 210mm !important; max-width: none !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
-    .a4-wrapper { box-shadow: none !important; margin: 0 !important; width: 210mm !important; transform: none !important; }
+    .a4-wrapper { box-shadow: none !important; margin: 0 !important; width: 210mm !important; height: 297mm !important; overflow: hidden !important; transform: none !important; }
   }
 
   /* ===== MOBILE ===== */
@@ -720,7 +721,8 @@ function downloadPDF() {
     filename: `บิลเงินสด_${name}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
-    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+    pagebreak: { mode: 'avoid-all' }
   }).from(el).save().then(() => { setA4Scale(); });
 }
 
