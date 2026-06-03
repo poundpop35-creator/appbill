@@ -356,6 +356,18 @@
   <aside class="sidebar">
     <div class="sidebar-inner">
 
+      <!-- โหมดเอกสาร -->
+      <div style="display:flex; gap:8px; margin-bottom:20px;">
+        <button id="mode-bill" onclick="setDocMode('bill')"
+          style="flex:1; padding:10px; border-radius:var(--radius-sm); border:2px solid var(--navy); background:var(--navy); color:white; font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;">
+          บิลเงินสด
+        </button>
+        <button id="mode-quote" onclick="setDocMode('quote')"
+          style="flex:1; padding:10px; border-radius:var(--radius-sm); border:2px solid var(--border); background:white; color:var(--text-muted); font-family:inherit; font-size:13px; font-weight:600; cursor:pointer;">
+          ใบเสนอราคา
+        </button>
+      </div>
+
       <!-- ข้อมูลลูกค้า -->
       <div class="section-title">ข้อมูลลูกค้า</div>
 
@@ -702,8 +714,21 @@ function resetScale() {
   document.documentElement.style.setProperty('--a4-scale', '1');
   el.style.transform = 'none';
   el.style.marginBottom = '0';
-  if (wrapper) wrapper.style.height = '';
+  if (wrapper) {
+    wrapper.style.height = '';
+    wrapper.style.overflow = 'visible';
+    wrapper.style.width = 'auto';
+  }
   return el;
+}
+
+function restoreScale() {
+  const wrapper = document.querySelector('.preview-wrapper');
+  if (wrapper) {
+    wrapper.style.overflow = '';
+    wrapper.style.width = '';
+  }
+  setA4Scale();
 }
 
 function printReceipt() {
@@ -711,30 +736,54 @@ function printReceipt() {
   requestAnimationFrame(() => { window.print(); });
 }
 
-window.addEventListener('afterprint', () => { setA4Scale(); });
+window.addEventListener('afterprint', restoreScale);
 
 function downloadPDF() {
   const el = resetScale();
   const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
   html2pdf().set({
     margin: 0,
-    filename: `บิลเงินสด_${name}.pdf`,
+    filename: `${DOC_MODES[docMode].label}_${name}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: 'avoid-all' }
-  }).from(el).save().then(() => { setA4Scale(); });
+  }).from(el).save().then(restoreScale);
 }
 
 function downloadImage() {
-  const el = document.getElementById('receipt-preview');
+  const el = resetScale();
   const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
-  html2canvas(el, { scale: 2, useCORS: true }).then(canvas => {
+  html2canvas(el, { scale: 2, useCORS: true, windowWidth: 794 }).then(canvas => {
     const a = document.createElement('a');
-    a.download = `บิลเงินสด_${name}.png`;
+    a.download = `${DOC_MODES[docMode].label}_${name}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
+    restoreScale();
   });
+}
+
+let docMode = 'bill';
+const DOC_MODES = {
+  bill:  { title: 'บิลเงินสด',   subtitle: 'CASH RECEIPT', label: 'บิลเงินสด' },
+  quote: { title: 'ใบเสนอราคา', subtitle: 'QUOTATION',    label: 'ใบเสนอราคา' }
+};
+
+function setDocMode(mode) {
+  docMode = mode;
+  const m = DOC_MODES[mode];
+  document.querySelector('.doc-title').textContent   = m.title;
+  document.querySelector('.doc-subtitle').textContent = m.subtitle;
+  // Toggle button styles
+  const bill  = document.getElementById('mode-bill');
+  const quote = document.getElementById('mode-quote');
+  if (mode === 'bill') {
+    bill.style.background  = 'var(--navy)';   bill.style.color  = 'white';   bill.style.borderColor  = 'var(--navy)';
+    quote.style.background = 'white';         quote.style.color = 'var(--text-muted)'; quote.style.borderColor = 'var(--border)';
+  } else {
+    quote.style.background = 'var(--navy)';  quote.style.color = 'white';   quote.style.borderColor = 'var(--navy)';
+    bill.style.background  = 'white';         bill.style.color  = 'var(--text-muted)'; bill.style.borderColor  = 'var(--border)';
+  }
 }
 
 // Auto-scale A4 on mobile
