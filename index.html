@@ -198,7 +198,10 @@
     font-size: 13px;
     position: relative;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
   }
+  .doc-body-spacer { flex: 1; }
 
   .doc-header-strip {
     display: flex; justify-content: space-between; align-items: stretch;
@@ -292,11 +295,13 @@
   /* ===== PRINT ===== */
   @page { size: A4 portrait; margin: 0; }
   @media print {
-    .topbar, .sidebar, .preview-label, .preview-area > *:not(.preview-wrapper) { display: none !important; }
-    body, .main-layout { display: block !important; background: white; }
-    .preview-area { background: white; padding: 0; }
-    .preview-wrapper { display: flex !important; justify-content: center; }
-    .a4-wrapper { box-shadow: none; margin: 0 auto !important; width: 210mm !important; min-height: 297mm !important; transform: none !important; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .topbar, .sidebar, .preview-label { display: none !important; }
+    body { background: white !important; margin: 0 !important; padding: 0 !important; }
+    .main-layout { display: block !important; background: white !important; }
+    .preview-area { display: block !important; background: white !important; padding: 0 !important; margin: 0 !important; }
+    .preview-wrapper { display: block !important; width: 210mm !important; max-width: none !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+    .a4-wrapper { box-shadow: none !important; margin: 0 !important; width: 210mm !important; transform: none !important; }
   }
 
   /* ===== MOBILE ===== */
@@ -338,7 +343,7 @@
   </div>
   <div class="topbar-actions">
     <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
-    <button class="btn-top btn-print" onclick="window.print()">🖨️ <span>พิมพ์</span></button>
+    <button class="btn-top btn-print" onclick="printReceipt()">🖨️ <span>พิมพ์</span></button>
     <button class="btn-top btn-pdf" onclick="downloadPDF()">📥 <span>โหลด PDF</span></button>
   </div>
 </header>
@@ -377,8 +382,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">วันที่</label>
-          <input type="text" id="in-date" class="form-input"
-            placeholder="เช่น 19 พ.ค. 2569" oninput="updatePreview()">
+          <input type="date" id="in-date" class="form-input" onchange="updatePreview()">
         </div>
       </div>
 
@@ -454,6 +458,8 @@
           </thead>
           <tbody id="out-items-tbody"></tbody>
         </table>
+
+        <div class="doc-body-spacer"></div>
 
         <!-- FOOTER -->
         <div class="doc-footer-row">
@@ -604,7 +610,7 @@ function updatePreview() {
   document.getElementById('out-customer-addr').textContent = document.getElementById('in-customer-addr').value;
   document.getElementById('out-tax-id').textContent = document.getElementById('in-tax-id').value;
   document.getElementById('out-job-name').textContent = document.getElementById('in-job-name').value;
-  document.getElementById('out-date').textContent = document.getElementById('in-date').value;
+  document.getElementById('out-date').textContent = formatThaiDate(document.getElementById('in-date').value);
 
   let grandTotal = 0;
   itemsData.forEach(item => { grandTotal += (parseFloat(item.qty)||0) * (parseFloat(item.price)||0); });
@@ -640,8 +646,14 @@ function updatePreview() {
       </td>
     </tr>`;
   }
-  html += `<tr class="doc-spacer"><td></td><td></td><td></td><td></td><td></td></tr>`;
   tbody.innerHTML = html;
+}
+
+function formatThaiDate(dateStr) {
+  if (!dateStr) return '';
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return `${d} ${months[m - 1]} ${y + 543}`;
 }
 
 function ArabicNumberToText(Number) {
@@ -683,24 +695,33 @@ function ArabicNumberToText(Number) {
   return BahtText;
 }
 
-function downloadPDF() {
+function resetScale() {
   const el = document.getElementById('receipt-preview');
-  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
-  // Reset inline transform so html2canvas captures the full-size A4 element
-  const prevTransform = el.style.transform;
-  const prevMarginBottom = el.style.marginBottom;
+  const wrapper = document.querySelector('.preview-wrapper');
+  document.documentElement.style.setProperty('--a4-scale', '1');
   el.style.transform = 'none';
   el.style.marginBottom = '0';
+  if (wrapper) wrapper.style.height = '';
+  return el;
+}
+
+function printReceipt() {
+  resetScale();
+  requestAnimationFrame(() => { window.print(); });
+}
+
+window.addEventListener('afterprint', () => { setA4Scale(); });
+
+function downloadPDF() {
+  const el = resetScale();
+  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
   html2pdf().set({
     margin: 0,
     filename: `บิลเงินสด_${name}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save().then(() => {
-    el.style.transform = prevTransform;
-    el.style.marginBottom = prevMarginBottom;
-  });
+  }).from(el).save().then(() => { setA4Scale(); });
 }
 
 function downloadImage() {
@@ -734,6 +755,8 @@ function setA4Scale() {
 }
 
 // Init
+const _today = new Date();
+document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
 renderItemsForm();
 setA4Scale();
 window.addEventListener('resize', setA4Scale);
