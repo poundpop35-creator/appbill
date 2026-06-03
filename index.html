@@ -66,6 +66,8 @@
   .btn-pdf:hover { background: #f0b030; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,160,32,0.4); }
   .btn-img { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
   .btn-img:hover { background: rgba(255,255,255,0.15); }
+  .btn-clear { background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
+  .btn-clear:hover { background: rgba(220,38,38,0.28); }
 
   /* ===== LAYOUT ===== */
   .main-layout {
@@ -339,6 +341,7 @@
     <span style="opacity:.6; font-weight:400; font-size:13px">ร้านปอนด์โลหะ</span>
   </div>
   <div class="topbar-actions">
+    <button class="btn-top btn-clear" onclick="clearData()">🗑️ <span>ล้างข้อมูล</span></button>
     <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
     <button class="btn-top btn-print" onclick="printReceipt()">🖨️ <span>พิมพ์</span></button>
     <button class="btn-top btn-pdf" onclick="downloadPDF()">📥 <span>โหลด PDF</span></button>
@@ -815,6 +818,20 @@ function loadFromStorage() {
     if (d.mode)    setDocMode(d.mode);
     return true;
   } catch { return false; }
+}
+
+function clearData() {
+  if (!confirm('ล้างข้อมูลทั้งหมดใช่ไหม?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  document.getElementById('in-customer-name').value = '';
+  document.getElementById('in-customer-addr').value = '';
+  document.getElementById('in-job-name').value = '';
+  document.getElementById('in-remarks').value = '';
+  const today = new Date();
+  document.getElementById('in-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  itemsData = [{ no: "1", desc: "", qty: "", unit: "ชุด", price: "" }];
+  setDocMode('bill');
+  renderItemsForm();
 }
 
 // Init
