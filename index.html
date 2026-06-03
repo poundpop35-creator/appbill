@@ -293,11 +293,15 @@
   .doc-signature-line { border-top: 1px dashed var(--border); padding-top: 6px; font-size: 11.5px; }
 
   /* ===== PRINT ===== */
+  @page { size: A4 portrait; margin: 0; }
   @media print {
-    .topbar, .sidebar, .preview-label, .preview-area > *:not(.preview-wrapper) { display: none !important; }
-    body, .main-layout { display: block !important; background: white; }
-    .preview-area { background: white; padding: 0; }
-    .a4-wrapper { box-shadow: none; margin: 0; width: 100%; }
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    .topbar, .sidebar, .preview-label { display: none !important; }
+    body { background: white !important; margin: 0 !important; padding: 0 !important; }
+    .main-layout { display: block !important; background: white !important; }
+    .preview-area { display: block !important; background: white !important; padding: 0 !important; margin: 0 !important; }
+    .preview-wrapper { display: block !important; width: 210mm !important; max-width: none !important; margin: 0 !important; padding: 0 !important; height: auto !important; overflow: visible !important; }
+    .a4-wrapper { box-shadow: none !important; margin: 0 !important; width: 210mm !important; transform: none !important; }
   }
 
   /* ===== MOBILE ===== */
@@ -339,7 +343,7 @@
   </div>
   <div class="topbar-actions">
     <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
-    <button class="btn-top btn-print" onclick="window.print()">🖨️ <span>พิมพ์</span></button>
+    <button class="btn-top btn-print" onclick="printReceipt()">🖨️ <span>พิมพ์</span></button>
     <button class="btn-top btn-pdf" onclick="downloadPDF()">📥 <span>โหลด PDF</span></button>
   </div>
 </header>
@@ -691,16 +695,33 @@ function ArabicNumberToText(Number) {
   return BahtText;
 }
 
-function downloadPDF() {
+function resetScale() {
   const el = document.getElementById('receipt-preview');
+  const wrapper = document.querySelector('.preview-wrapper');
+  document.documentElement.style.setProperty('--a4-scale', '1');
+  el.style.transform = 'none';
+  el.style.marginBottom = '0';
+  if (wrapper) wrapper.style.height = '';
+  return el;
+}
+
+function printReceipt() {
+  resetScale();
+  requestAnimationFrame(() => { window.print(); });
+}
+
+window.addEventListener('afterprint', () => { setA4Scale(); });
+
+function downloadPDF() {
+  const el = resetScale();
   const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
   html2pdf().set({
     margin: 0,
     filename: `บิลเงินสด_${name}.pdf`,
     image: { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true },
+    html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-  }).from(el).save();
+  }).from(el).save().then(() => { setA4Scale(); });
 }
 
 function downloadImage() {
