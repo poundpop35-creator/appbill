@@ -311,19 +311,16 @@
     .sidebar { height: auto; position: static; }
     .topbar-brand span:not(:first-child) { display: none; }
     .btn-top span { display: none; }
-    .preview-area { padding: 16px 0; overflow-x: hidden; }
+    .preview-area { padding: 16px 0; overflow-x: auto; }
 
-    /* Scale A4 (794px wide) down to fit viewport */
+    /* Show A4 at full size with horizontal scroll */
     .preview-wrapper {
-      width: 100vw;
-      overflow: hidden;
+      width: max-content;
+      min-width: 100%;
+      overflow-x: visible;
       display: flex;
       justify-content: center;
-    }
-    .a4-wrapper {
-      transform-origin: top center;
-      transform: scale(var(--a4-scale, 0.45));
-      margin-bottom: calc((297mm * var(--a4-scale, 0.45)) - 297mm);
+      padding: 0 12px;
     }
   }
 
@@ -720,26 +717,11 @@ function ArabicNumberToText(Number) {
 }
 
 function resetScale() {
-  const el = document.getElementById('receipt-preview');
-  const wrapper = document.querySelector('.preview-wrapper');
-  document.documentElement.style.setProperty('--a4-scale', '1');
-  el.style.transform = 'none';
-  el.style.marginBottom = '0';
-  if (wrapper) {
-    wrapper.style.height = '';
-    wrapper.style.overflow = 'visible';
-    wrapper.style.width = 'auto';
-  }
-  return el;
+  return document.getElementById('receipt-preview');
 }
 
 function restoreScale() {
-  const wrapper = document.querySelector('.preview-wrapper');
-  if (wrapper) {
-    wrapper.style.overflow = '';
-    wrapper.style.width = '';
-  }
-  setA4Scale();
+  // nothing to restore — no scaling applied
 }
 
 function printReceipt() {
@@ -797,23 +779,11 @@ function setDocMode(mode) {
   }
 }
 
-// Auto-scale A4 on mobile
+// No scaling — A4 always renders at full size, scroll on mobile
 function setA4Scale() {
-  const A4_PX = 794;
-  const vw = window.innerWidth;
-  if (vw < 900) {
-    const scale = (vw - 16) / A4_PX;
-    document.documentElement.style.setProperty('--a4-scale', scale.toFixed(4));
-    const wrapper = document.querySelector('.preview-wrapper');
-    const a4 = document.getElementById('receipt-preview');
-    if (wrapper && a4) {
-      wrapper.style.height = Math.round(a4.scrollHeight * scale) + 'px';
-    }
-  } else {
-    document.documentElement.style.setProperty('--a4-scale', '1');
-    const wrapper = document.querySelector('.preview-wrapper');
-    if (wrapper) wrapper.style.height = '';
-  }
+  document.documentElement.style.setProperty('--a4-scale', '1');
+  const wrapper = document.querySelector('.preview-wrapper');
+  if (wrapper) wrapper.style.height = '';
 }
 
 const STORAGE_KEY = 'appbill_data';
