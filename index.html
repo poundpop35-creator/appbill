@@ -198,7 +198,10 @@
     font-size: 13px;
     position: relative;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
   }
+  .doc-body-spacer { flex: 1; }
 
   .doc-header-strip {
     display: flex; justify-content: space-between; align-items: stretch;
@@ -375,8 +378,7 @@
         </div>
         <div class="form-group">
           <label class="form-label">วันที่</label>
-          <input type="text" id="in-date" class="form-input"
-            placeholder="เช่น 19 พ.ค. 2569" oninput="updatePreview()">
+          <input type="date" id="in-date" class="form-input" onchange="updatePreview()">
         </div>
       </div>
 
@@ -452,6 +454,8 @@
           </thead>
           <tbody id="out-items-tbody"></tbody>
         </table>
+
+        <div class="doc-body-spacer"></div>
 
         <!-- FOOTER -->
         <div class="doc-footer-row">
@@ -602,7 +606,7 @@ function updatePreview() {
   document.getElementById('out-customer-addr').textContent = document.getElementById('in-customer-addr').value;
   document.getElementById('out-tax-id').textContent = document.getElementById('in-tax-id').value;
   document.getElementById('out-job-name').textContent = document.getElementById('in-job-name').value;
-  document.getElementById('out-date').textContent = document.getElementById('in-date').value;
+  document.getElementById('out-date').textContent = formatThaiDate(document.getElementById('in-date').value);
 
   let grandTotal = 0;
   itemsData.forEach(item => { grandTotal += (parseFloat(item.qty)||0) * (parseFloat(item.price)||0); });
@@ -638,8 +642,14 @@ function updatePreview() {
       </td>
     </tr>`;
   }
-  html += `<tr class="doc-spacer"><td></td><td></td><td></td><td></td><td></td></tr>`;
   tbody.innerHTML = html;
+}
+
+function formatThaiDate(dateStr) {
+  if (!dateStr) return '';
+  const months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return `${d} ${months[m - 1]} ${y + 543}`;
 }
 
 function ArabicNumberToText(Number) {
@@ -724,6 +734,8 @@ function setA4Scale() {
 }
 
 // Init
+const _today = new Date();
+document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
 renderItemsForm();
 setA4Scale();
 window.addEventListener('resize', setA4Scale);
