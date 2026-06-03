@@ -670,6 +670,7 @@ function updatePreview() {
     <td style="text-align:center; font-weight:700; color:var(--navy); padding:7px 8px; font-size:12.5px;">${grandTotal ? grandTotal.toLocaleString() : '0'}</td>
   </tr>`;
   tbody.innerHTML = html;
+  saveToStorage();
 }
 
 function formatThaiDate(dateStr) {
@@ -815,9 +816,44 @@ function setA4Scale() {
   }
 }
 
+const STORAGE_KEY = 'appbill_data';
+
+function saveToStorage() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    name:    document.getElementById('in-customer-name').value,
+    addr:    document.getElementById('in-customer-addr').value,
+    taxId:   document.getElementById('in-tax-id').value,
+    job:     document.getElementById('in-job-name').value,
+    date:    document.getElementById('in-date').value,
+    remarks: document.getElementById('in-remarks').value,
+    items:   itemsData,
+    mode:    docMode
+  }));
+}
+
+function loadFromStorage() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return false;
+  try {
+    const d = JSON.parse(raw);
+    if (d.name)    document.getElementById('in-customer-name').value = d.name;
+    if (d.addr)    document.getElementById('in-customer-addr').value = d.addr;
+    if (d.taxId)   document.getElementById('in-tax-id').value        = d.taxId;
+    if (d.job)     document.getElementById('in-job-name').value      = d.job;
+    if (d.date)    document.getElementById('in-date').value          = d.date;
+    if (d.remarks) document.getElementById('in-remarks').value       = d.remarks;
+    if (d.items && d.items.length) itemsData = d.items;
+    if (d.mode)    setDocMode(d.mode);
+    return true;
+  } catch { return false; }
+}
+
 // Init
 const _today = new Date();
-document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
+const _loaded = loadFromStorage();
+if (!_loaded) {
+  document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
+}
 renderItemsForm();
 setA4Scale();
 window.addEventListener('resize', setA4Scale);
