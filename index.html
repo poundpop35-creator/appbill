@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบออกบิลเงินสด · ร้านปอนด์โลหะ</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Great+Vibes&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Great+Vibes&family=Kodchasan:ital@1&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -291,11 +291,13 @@
 
   .doc-signature {
     border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-    padding: 12px 16px; width: 172px; text-align: center;
+    padding: 12px 16px; width: 182px; text-align: center;
     margin-top: 16px;
   }
   .doc-signature-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 48px; }
-  .doc-signature-digital { font-family: 'Great Vibes', cursive; font-size: 26px; color: #1a9a8a; line-height: 1.3; white-space: nowrap; }
+  .doc-signature-digital { font-size: 20px; color: #1a9a8a; line-height: 1.4; white-space: nowrap; }
+  .doc-signature-digital.sig-en { font-family: 'Great Vibes', cursive; font-size: 22px; }
+  .doc-signature-digital.sig-th { font-family: 'Kodchasan', cursive; font-style: italic; font-size: 17px; }
   .doc-signature-line { border-top: 1px dashed var(--border); padding-top: 6px; font-size: 11.5px; }
   .doc-signature-shop { font-size: 11.5px; margin-top: 3px; }
 
@@ -420,6 +422,16 @@
           <button id="sig-mode-digital" onclick="setSigMode('digital')"
             style="flex:1; padding:8px; border-radius:var(--radius-sm); border:2px solid var(--border); background:white; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer;">
             🖋️ ลายเซ็นระบบ
+          </button>
+        </div>
+        <div id="sig-lang-group" style="display:none; gap:6px; margin-top:8px;">
+          <button id="sig-lang-th" onclick="setSigLang('th')"
+            style="flex:1; padding:6px; border-radius:var(--radius-sm); border:2px solid var(--navy); background:var(--navy); color:white; font-family:inherit; font-size:12px; cursor:pointer;">
+            ไทย
+          </button>
+          <button id="sig-lang-en" onclick="setSigLang('en')"
+            style="flex:1; padding:6px; border-radius:var(--radius-sm); border:2px solid var(--border); background:white; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer;">
+            EN
           </button>
         </div>
       </div>
@@ -844,6 +856,26 @@ function downloadImage() {
 }
 
 let sigMode = 'manual';
+let sigLang = 'th';
+
+function setSigLang(lang) {
+  sigLang = lang;
+  const thBtn = document.getElementById('sig-lang-th');
+  const enBtn = document.getElementById('sig-lang-en');
+  const digitalEl = document.getElementById('sig-digital');
+  if (lang === 'th') {
+    thBtn.style.background = 'var(--navy)'; thBtn.style.color = 'white'; thBtn.style.borderColor = 'var(--navy)';
+    enBtn.style.background = 'white'; enBtn.style.color = 'var(--text-muted)'; enBtn.style.borderColor = 'var(--border)';
+    digitalEl.textContent = 'วิษณุ เพชรณิชกุล';
+    digitalEl.className = 'doc-signature-digital sig-th';
+  } else {
+    enBtn.style.background = 'var(--navy)'; enBtn.style.color = 'white'; enBtn.style.borderColor = 'var(--navy)';
+    thBtn.style.background = 'white'; thBtn.style.color = 'var(--text-muted)'; thBtn.style.borderColor = 'var(--border)';
+    digitalEl.textContent = 'Wisanu Phetrnitchakun';
+    digitalEl.className = 'doc-signature-digital sig-en';
+  }
+  saveToStorage();
+}
 
 function setSigMode(mode) {
   sigMode = mode;
@@ -852,18 +884,21 @@ function setSigMode(mode) {
   const digitalEl = document.getElementById('sig-digital');
   const lineEl    = document.getElementById('sig-issuer-line');
   const label     = document.getElementById('sig-issuer-label');
+  const langGroup = document.getElementById('sig-lang-group');
   if (mode === 'digital') {
     digital.style.background = 'var(--navy)'; digital.style.color = 'white'; digital.style.borderColor = 'var(--navy)';
     manual.style.background  = 'white'; manual.style.color = 'var(--text-muted)'; manual.style.borderColor = 'var(--border)';
     digitalEl.style.display  = '';
     lineEl.style.visibility  = '';
     label.style.marginBottom = '6px';
+    langGroup.style.display  = 'flex';
   } else {
     manual.style.background  = 'var(--navy)'; manual.style.color = 'white'; manual.style.borderColor = 'var(--navy)';
     digital.style.background = 'white'; digital.style.color = 'var(--text-muted)'; digital.style.borderColor = 'var(--border)';
     digitalEl.style.display  = 'none';
     lineEl.style.visibility  = '';
     label.style.marginBottom = '';
+    langGroup.style.display  = 'none';
   }
   saveToStorage();
 }
@@ -924,6 +959,7 @@ function saveToStorage() {
     items:        itemsData,
     mode:         docMode,
     sigMode:      sigMode,
+    sigLang:      sigLang,
     approverMode: document.getElementById('in-approver-mode').value,
     approverName: document.getElementById('in-approver-name').value
   }));
@@ -943,6 +979,7 @@ function loadFromStorage() {
     if (d.items && d.items.length) itemsData = d.items;
     if (d.mode)    setDocMode(d.mode);
     if (d.sigMode) setSigMode(d.sigMode);
+    if (d.sigLang) setSigLang(d.sigLang);
     if (d.approverMode) {
       document.getElementById('in-approver-mode').value = d.approverMode;
       onApproverModeChange();
@@ -975,6 +1012,7 @@ if (!_loaded) {
   document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
   setDocMode('bill');
   setSigMode('manual');
+  setSigLang('th');
 }
 renderItemsForm();
 setA4Scale();
