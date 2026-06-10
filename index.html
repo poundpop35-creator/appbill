@@ -269,8 +269,8 @@
 
   /* TOTALS + SIGNATURE */
   .doc-footer-row {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-top: 8px;
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-top: 8px; gap: 16px;
   }
   .doc-deco-dots { display: flex; gap: 6px; align-items: center; }
   .doc-deco-dot {
@@ -518,7 +518,8 @@
               </div>
               <div class="doc-signature" id="sig-approver-box">
                 <div class="doc-signature-label">ผู้อนุมัติซื้อ</div>
-                <div class="doc-signature-line" style="color:transparent">-</div>
+                <div class="doc-signature-line" id="sig-approver-line" style="color:transparent">-</div>
+                <div class="doc-signature-shop" style="color:transparent">-</div>
               </div>
             </div>
           </div>
@@ -661,7 +662,7 @@ function updatePreview() {
   // Update approver name in signature box
   if (docMode === 'quote') {
     const mode = document.getElementById('in-approver-mode').value;
-    const line = document.querySelector('#sig-approver-box .doc-signature-line');
+    const line = document.getElementById('sig-approver-line');
     if (mode === 'customer') {
       const n = document.getElementById('in-customer-name').value;
       line.textContent = n || ' ';
