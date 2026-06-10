@@ -509,7 +509,7 @@
             </div>
             <div style="display:flex; gap:14px; margin-top:12px;">
               <div class="doc-signature">
-                <div class="doc-signature-label" id="sig-issuer-label">ผู้รับเงิน</div>
+                <div class="doc-signature-label" id="sig-issuer-label">ผู้ออกบิล</div>
                 <div class="doc-signature-line">(วิษณุ เพชรณิชกุล)</div>
                 <div class="doc-signature-shop">ร้านปอนด์โลหะ</div>
               </div>
@@ -818,7 +818,7 @@ function setDocMode(mode) {
   if (mode === 'bill') {
     bill.style.background  = 'var(--navy)';   bill.style.color  = 'white';   bill.style.borderColor  = 'var(--navy)';
     quote.style.background = 'white';         quote.style.color = 'var(--text-muted)'; quote.style.borderColor = 'var(--border)';
-    document.getElementById('sig-issuer-label').textContent = 'ผู้รับเงิน';
+    document.getElementById('sig-issuer-label').textContent = 'ผู้ออกบิล';
     document.getElementById('sig-approver-box').style.display = 'none';
     document.getElementById('approver-group').style.display = 'none';
   } else {
