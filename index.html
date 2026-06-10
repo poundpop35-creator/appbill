@@ -66,6 +66,8 @@
   .btn-pdf:hover { background: #f0b030; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(232,160,32,0.4); }
   .btn-img { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
   .btn-img:hover { background: rgba(255,255,255,0.15); }
+  .btn-share { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-share:hover { background: rgba(255,255,255,0.15); }
   .btn-clear { background: rgba(220,38,38,0.15); color: #fca5a5; border: 1px solid rgba(220,38,38,0.3); }
   .btn-clear:hover { background: rgba(220,38,38,0.28); }
 
@@ -349,6 +351,7 @@
   </div>
   <div class="topbar-actions">
     <button class="btn-top btn-clear" onclick="clearData()">🗑️ <span>ล้างข้อมูล</span></button>
+    <button class="btn-top btn-share" onclick="shareImage()">↗️ <span>แชร์</span></button>
     <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
     <button class="btn-top btn-print" onclick="printReceipt()">🖨️ <span>พิมพ์</span></button>
     <button class="btn-top btn-pdf" onclick="downloadPDF()">📥 <span>โหลด PDF</span></button>
@@ -787,6 +790,27 @@ function downloadPDF() {
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: 'avoid-all' }
   }).from(el).save().then(restoreScale);
+}
+
+function shareImage() {
+  const el = resetScale();
+  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
+  const filename = `${DOC_MODES[docMode].label}_${name}.png`;
+  html2canvas(el, { scale: 2, useCORS: true, windowWidth: 794 }).then(canvas => {
+    canvas.toBlob(blob => {
+      restoreScale();
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: filename });
+      } else {
+        // fallback: download
+        const a = document.createElement('a');
+        a.download = filename;
+        a.href = URL.createObjectURL(blob);
+        a.click();
+      }
+    }, 'image/png');
+  });
 }
 
 function downloadImage() {
