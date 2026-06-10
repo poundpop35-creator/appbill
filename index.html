@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ระบบออกบิลเงินสด · ร้านปอนด์โลหะ</title>
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Itim&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Sriracha&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
@@ -295,7 +295,7 @@
     margin-top: 16px;
   }
   .doc-signature-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 48px; }
-  .doc-signature-digital { font-family: 'Itim', cursive; font-size: 17px; color: #1a6b9a; margin-bottom: 0; line-height: 1.3; white-space: nowrap; }
+  .doc-signature-digital { font-family: 'Sriracha', cursive; font-size: 19px; color: #1a6b9a; line-height: 1.3; white-space: nowrap; }
   .doc-signature-line { border-top: 1px dashed var(--border); padding-top: 6px; font-size: 11.5px; }
   .doc-signature-shop { font-size: 11.5px; margin-top: 3px; }
 
@@ -853,17 +853,17 @@ function setSigMode(mode) {
   const lineEl    = document.getElementById('sig-issuer-line');
   const label     = document.getElementById('sig-issuer-label');
   if (mode === 'digital') {
-    digital.style.background   = 'var(--navy)'; digital.style.color = 'white'; digital.style.borderColor = 'var(--navy)';
-    manual.style.background    = 'white'; manual.style.color = 'var(--text-muted)'; manual.style.borderColor = 'var(--border)';
-    digitalEl.style.display    = '';
-    lineEl.style.visibility    = 'hidden';
-    label.style.marginBottom   = '4px';
+    digital.style.background = 'var(--navy)'; digital.style.color = 'white'; digital.style.borderColor = 'var(--navy)';
+    manual.style.background  = 'white'; manual.style.color = 'var(--text-muted)'; manual.style.borderColor = 'var(--border)';
+    digitalEl.style.display  = '';
+    lineEl.style.visibility  = '';
+    label.style.marginBottom = '6px';
   } else {
-    manual.style.background    = 'var(--navy)'; manual.style.color = 'white'; manual.style.borderColor = 'var(--navy)';
-    digital.style.background   = 'white'; digital.style.color = 'var(--text-muted)'; digital.style.borderColor = 'var(--border)';
-    digitalEl.style.display    = 'none';
-    lineEl.style.visibility    = '';
-    label.style.marginBottom   = '';
+    manual.style.background  = 'var(--navy)'; manual.style.color = 'white'; manual.style.borderColor = 'var(--navy)';
+    digital.style.background = 'white'; digital.style.color = 'var(--text-muted)'; digital.style.borderColor = 'var(--border)';
+    digitalEl.style.display  = 'none';
+    lineEl.style.visibility  = '';
+    label.style.marginBottom = '';
   }
   saveToStorage();
 }
