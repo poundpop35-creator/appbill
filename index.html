@@ -411,9 +411,9 @@
         </div>
       </div>
 
-      <!-- ลายเซ็นผู้ออกบิล -->
+      <!-- ลายเซ็นผู้รับเงิน -->
       <div class="form-group">
-        <label class="form-label">ลายเซ็นผู้ออกบิล</label>
+        <label class="form-label">ลายเซ็นผู้รับเงิน</label>
         <div style="display:flex; gap:8px;">
           <button id="sig-mode-manual" onclick="setSigMode('manual')"
             style="flex:1; padding:8px; border-radius:var(--radius-sm); border:2px solid var(--border); background:white; color:var(--text-muted); font-family:inherit; font-size:12px; cursor:pointer;">
@@ -540,7 +540,7 @@
             </div>
             <div style="display:flex; gap:14px; margin-top:12px;">
               <div class="doc-signature">
-                <div class="doc-signature-label" id="sig-issuer-label">ผู้ออกบิล</div>
+                <div class="doc-signature-label" id="sig-issuer-label">ผู้รับเงิน</div>
                 <div id="sig-digital" class="doc-signature-digital" style="display:none">Wisanu Phetrnitchakun</div>
                 <div class="doc-signature-line" id="sig-issuer-line">(วิษณุ เพชรณิชกุล)</div>
                 <div class="doc-signature-shop">ร้านปอนด์โลหะ</div>
@@ -920,7 +920,7 @@ function setDocMode(mode) {
   if (mode === 'bill') {
     bill.style.background  = 'var(--navy)';   bill.style.color  = 'white';   bill.style.borderColor  = 'var(--navy)';
     quote.style.background = 'white';         quote.style.color = 'var(--text-muted)'; quote.style.borderColor = 'var(--border)';
-    document.getElementById('sig-issuer-label').textContent = 'ผู้ออกบิล';
+    document.getElementById('sig-issuer-label').textContent = 'ผู้รับเงิน';
     document.getElementById('sig-approver-box').style.display = 'none';
     document.getElementById('approver-group').style.display = 'none';
   } else {
