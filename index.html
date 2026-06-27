@@ -121,6 +121,7 @@
     background: var(--accent-light); border-color: #d4911a; color: #7a4800; font-weight: 700;
   }
   textarea.form-input { resize: vertical; min-height: 72px; }
+  textarea.form-input.item-desc { min-height: 52px; resize: vertical; }
 
   /* ===== TOTAL DISPLAY ===== */
   .total-display {
@@ -597,8 +598,8 @@ function renderItemsForm() {
       <div class="item-grid">
         <div class="full">
           <label class="form-label">รายละเอียดสินค้า / บริการ</label>
-          <input type="text" value="${item.desc}" placeholder="เช่น ประตูยืด เฉพาะบังตา สีขาว"
-            class="form-input" oninput="updateItemData(${index}, 'desc', this.value)">
+          <textarea placeholder="เช่น ประตูยืด เฉพาะบังตา สีขาว" rows="2"
+            class="form-input item-desc" oninput="updateItemData(${index}, 'desc', this.value)" data-desc-index="${index}"></textarea>
         </div>
         <div>
           <label class="form-label">จำนวน</label>
@@ -623,6 +624,9 @@ function renderItemsForm() {
       </div>
     `;
     container.appendChild(card);
+    // Set textarea value safely (avoids HTML injection)
+    const ta = card.querySelector('[data-desc-index]');
+    if (ta) ta.value = item.desc || '';
   });
   calculateAllTotals();
 }
@@ -723,7 +727,7 @@ function updatePreview() {
     const rowTotal = q * p;
     html += `<tr>
       <td>${item.no}</td>
-      <td>${item.desc}</td>
+      <td style="white-space:pre-wrap">${(item.desc||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
       <td>${item.qty ? item.qty + ' ' + (item.unit || 'ชุด') : ''}</td>
       <td>${p ? p.toLocaleString() : ''}</td>
       <td>${rowTotal ? rowTotal.toLocaleString() : ''}</td>
