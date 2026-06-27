@@ -992,7 +992,6 @@ function loadFromStorage() {
     return true;
   } catch { return false; }
 }
-
 function clearData() {
   if (!confirm('ล้างข้อมูลทั้งหมดใช่ไหม?')) return;
   localStorage.removeItem(STORAGE_KEY);
@@ -1019,6 +1018,7 @@ if (!_loaded) {
   setSigLang('th');
 }
 renderItemsForm();
+updatePreview();
 setA4Scale();
 window.addEventListener('resize', setA4Scale);
 </script>
