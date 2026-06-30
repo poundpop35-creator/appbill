@@ -74,6 +74,29 @@
   .btn-save:hover { background: rgba(22,163,74,0.35); }
   .btn-jobs { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
   .btn-jobs:hover { background: rgba(255,255,255,0.18); }
+  .btn-sync { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-sync:hover { background: rgba(255,255,255,0.18); }
+
+  /* Sync Modal */
+  .sync-status-box {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 12px; border-radius: var(--radius-sm);
+    background: var(--surface); font-size: 13px; font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .sync-help {
+    font-size: 12px; color: var(--text-muted); line-height: 1.6;
+    background: var(--navy-light); border-radius: var(--radius-sm);
+    padding: 12px 14px; margin-top: 16px;
+  }
+  .sync-help a { color: var(--navy-mid); }
+  .sync-actions { display: flex; gap: 8px; margin-top: 10px; }
+  .btn-modal {
+    padding: 9px 16px; border-radius: var(--radius-sm); border: none;
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn-modal-primary { background: var(--navy); color: white; }
+  .btn-modal-secondary { background: var(--surface); color: var(--text); border: 1.5px solid var(--border); }
 
   /* Jobs Modal */
   .modal-overlay {
@@ -399,6 +422,7 @@
     <button class="btn-top btn-clear" onclick="clearData()">🗑️ <span>ล้างข้อมูล</span></button>
     <button class="btn-top btn-jobs" onclick="openJobsModal()">📂 <span>งานที่บันทึก</span></button>
     <button class="btn-top btn-save" onclick="saveJob()">💾 <span>บันทึกงาน</span></button>
+    <button class="btn-top btn-sync" onclick="openSyncModal()">☁️ <span>Google Sheet</span></button>
     <button class="btn-top btn-share" onclick="shareImage()">↗️ <span>แชร์</span></button>
     <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
     <button class="btn-top btn-print" onclick="printReceipt()">🖨️ <span>พิมพ์</span></button>
@@ -1095,6 +1119,7 @@ function saveJob() {
   // keep max 50
   if (jobs.length > 50) jobs.splice(50);
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+  pushJobToSheet(newJob);
   const btn = document.querySelector('.btn-save');
   const orig = btn.innerHTML;
   btn.innerHTML = '✅ <span>บันทึกแล้ว</span>';
@@ -1163,6 +1188,93 @@ function deleteJob(e, id) {
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
   renderJobsList();
 }
+
+// ===== GOOGLE SHEETS BACKUP =====
+const SYNC_KEY = 'appbill_gsheet_url';
+
+function getSyncUrl() {
+  return localStorage.getItem(SYNC_KEY) || '';
+}
+
+function openSyncModal() {
+  document.getElementById('sync-url-input').value = getSyncUrl();
+  updateSyncStatus();
+  document.getElementById('sync-modal').classList.add('open');
+}
+
+function closeSyncModal() {
+  document.getElementById('sync-modal').classList.remove('open');
+}
+
+function updateSyncStatus() {
+  const url = getSyncUrl();
+  const el = document.getElementById('sync-status');
+  el.textContent = url ? '✅ เชื่อมต่อ Google Sheet แล้ว — งานใหม่จะถูกส่งไปสำรองอัตโนมัติ' : '⚪ ยังไม่ได้เชื่อมต่อ Google Sheet';
+  el.style.color = url ? 'var(--success)' : 'var(--text-muted)';
+}
+
+function saveSyncUrl() {
+  const url = document.getElementById('sync-url-input').value.trim();
+  if (url) localStorage.setItem(SYNC_KEY, url);
+  else localStorage.removeItem(SYNC_KEY);
+  updateSyncStatus();
+  const btn = document.getElementById('sync-save-btn');
+  const orig = btn.textContent;
+  btn.textContent = 'บันทึกแล้ว ✓';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+function jobToSheetRow(j) {
+  const total = (j.items || []).reduce((s, i) => (s + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)), 0);
+  return {
+    id: j.id,
+    savedAt: j.savedAt,
+    mode: j.mode === 'quote' ? 'ใบเสนอราคา' : 'บิลเงินสด',
+    name: j.name,
+    addr: j.addr,
+    taxId: j.taxId,
+    job: j.job,
+    date: j.date,
+    remarks: j.remarks,
+    items: (j.items || []).map(i => `${i.desc} x${i.qty} ${i.unit} @${i.price}`).join(' | '),
+    total: total
+  };
+}
+
+function pushJobToSheet(job) {
+  const url = getSyncUrl();
+  if (!url) return;
+  // no-cors: response can't be read, this is a best-effort fire-and-forget backup
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify(jobToSheetRow(job))
+  }).catch(() => {});
+}
+
+function syncAllToSheet() {
+  const url = getSyncUrl();
+  if (!url) { alert('กรุณาใส่ลิงก์ Google Sheet ก่อน'); return; }
+  const jobs = getJobs();
+  if (!jobs.length) { alert('ยังไม่มีงานที่บันทึกไว้'); return; }
+  const btn = document.getElementById('sync-now-btn');
+  const orig = btn.textContent;
+  let sent = 0;
+  jobs.slice().reverse().forEach((j, i) => {
+    setTimeout(() => {
+      pushJobToSheet(j);
+      sent++;
+      btn.textContent = `กำลังส่ง... (${sent}/${jobs.length})`;
+      if (sent === jobs.length) {
+        setTimeout(() => {
+          btn.textContent = `✅ ส่งครบ ${jobs.length} งานแล้ว`;
+          setTimeout(() => btn.textContent = orig, 2000);
+        }, 300);
+      }
+    }, i * 250);
+  });
+}
 </script>
 
 <!-- Jobs Modal -->
@@ -1173,6 +1285,39 @@ function deleteJob(e, id) {
       <button class="modal-close" onclick="closeJobsModal()">✕</button>
     </div>
     <div class="modal-body" id="jobs-modal-body"></div>
+  </div>
+</div>
+
+<!-- Google Sheets Sync Modal -->
+<div class="modal-overlay" id="sync-modal" onclick="if(event.target===this)closeSyncModal()">
+  <div class="modal-box">
+    <div class="modal-header">
+      ☁️ สำรองข้อมูลไป Google Sheet
+      <button class="modal-close" onclick="closeSyncModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="sync-status-box" id="sync-status">⚪ ยังไม่ได้เชื่อมต่อ Google Sheet</div>
+
+      <div class="form-group">
+        <label class="form-label">ลิงก์ Google Apps Script (Web App URL)</label>
+        <input type="text" id="sync-url-input" class="form-input"
+          placeholder="https://script.google.com/macros/s/XXXXX/exec">
+      </div>
+      <div class="sync-actions">
+        <button class="btn-modal btn-modal-primary" id="sync-save-btn" onclick="saveSyncUrl()">บันทึกลิงก์</button>
+        <button class="btn-modal btn-modal-secondary" id="sync-now-btn" onclick="syncAllToSheet()">ส่งงานทั้งหมดตอนนี้</button>
+      </div>
+
+      <div class="sync-help">
+        <strong>วิธีตั้งค่า (ทำครั้งเดียว):</strong><br>
+        1. สร้าง Google Sheet ใหม่<br>
+        2. ไปที่เมนู <strong>ส่วนขยาย (Extensions) → Apps Script</strong><br>
+        3. วางโค้ดที่ผู้พัฒนาให้มา แล้วกด <strong>Deploy → New deployment → Web app</strong><br>
+        4. ตั้งค่า "Who has access" เป็น <strong>Anyone</strong> แล้วกด Deploy<br>
+        5. คัดลอกลิงก์ที่ได้ (ลงท้ายด้วย /exec) มาวางในช่องด้านบน<br><br>
+        เมื่อเชื่อมต่อแล้ว ทุกครั้งที่กด <strong>💾 บันทึกงาน</strong> ข้อมูลจะถูกส่งไปสำรองไว้ใน Google Sheet โดยอัตโนมัติ
+      </div>
+    </div>
   </div>
 </div>
 </body>
