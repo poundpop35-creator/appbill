@@ -1216,6 +1216,10 @@ function updateSyncStatus() {
 
 function saveSyncUrl() {
   const url = document.getElementById('sync-url-input').value.trim();
+  if (url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) {
+    alert('ลิงก์ไม่ถูกต้อง ❌\n\nต้องเป็นลิงก์ Apps Script ที่ลงท้ายด้วย /exec\nไม่ใช่ลิงก์ Google Sheet ทั่วไป (docs.google.com/spreadsheets/...)\n\nดูวิธีตั้งค่าด้านล่าง');
+    return;
+  }
   if (url) localStorage.setItem(SYNC_KEY, url);
   else localStorage.removeItem(SYNC_KEY);
   updateSyncStatus();
