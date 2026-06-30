@@ -1137,9 +1137,15 @@ function saveJob() {
   setTimeout(() => btn.innerHTML = orig, 1500);
 }
 
+let currentJobsListCache = [];
+
 function openJobsModal() {
-  renderJobsList();
+  document.getElementById('jobs-modal-body').innerHTML = '<div class="modal-empty">กำลังโหลดงานจากทุกเครื่อง...</div>';
   document.getElementById('jobs-modal').classList.add('open');
+  fetchRemoteJobs().then(remoteJobs => {
+    currentJobsListCache = mergeJobs(getJobs(), remoteJobs);
+    renderJobsList();
+  });
 }
 
 function closeJobsModal() {
@@ -1147,7 +1153,7 @@ function closeJobsModal() {
 }
 
 function renderJobsList() {
-  const jobs = getJobs();
+  const jobs = currentJobsListCache;
   const body = document.getElementById('jobs-modal-body');
   if (!jobs.length) {
     body.innerHTML = '<div class="modal-empty">ยังไม่มีงานที่บันทึกไว้<br><small>กด 💾 บันทึกงาน เพื่อเพิ่มงาน</small></div>';
@@ -1158,7 +1164,7 @@ function renderJobsList() {
     const dateStr = d ? `${d.getDate()}/${d.getMonth()+1}/${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}` : '';
     const modeLabel = j.mode === 'quote' ? 'ใบเสนอราคา' : 'บิลเงินสด';
     const badgeClass = j.mode === 'quote' ? 'badge-quote' : 'badge-bill';
-    const total = (j.items||[]).reduce((s,i)=>(s+(parseFloat(i.qty)||0)*(parseFloat(i.price)||0)),0);
+    const total = (j.items||[]).reduce((s,i)=>s+getLineTotal(i),0);
     return `<div class="job-item" onclick="loadJob(${j.id})">
       <div class="job-item-info">
         <div class="job-item-name">${j.name}</div>
@@ -1171,8 +1177,7 @@ function renderJobsList() {
 }
 
 function loadJob(id) {
-  const jobs = getJobs();
-  const j = jobs.find(x => x.id === id);
+  const j = currentJobsListCache.find(x => x.id === id) || getJobs().find(x => x.id === id);
   if (!j) return;
   document.getElementById('in-customer-name').value = j.name === '(ไม่มีชื่อลูกค้า)' ? '' : j.name;
   document.getElementById('in-customer-addr').value = j.addr || '';
@@ -1198,6 +1203,7 @@ function deleteJob(e, id) {
   const jobs = getJobs().filter(x => x.id !== id);
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
   deleteJobFromSheet(id);
+  currentJobsListCache = currentJobsListCache.filter(x => x.id !== id);
   renderJobsList();
 }
 
@@ -1252,7 +1258,7 @@ function saveSyncUrl() {
 }
 
 function jobToSheetRow(j) {
-  const total = (j.items || []).reduce((s, i) => (s + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)), 0);
+  const total = (j.items || []).reduce((s, i) => s + getLineTotal(i), 0);
   return {
     action: 'create',
     id: j.id,
@@ -1265,8 +1271,27 @@ function jobToSheetRow(j) {
     date: j.date,
     remarks: j.remarks,
     items: (j.items || []).map(i => `${i.desc} x${i.qty} ${i.unit} @${i.price}`).join(' | '),
-    total: total
+    total: total,
+    json: JSON.stringify(j)
   };
+}
+
+// Pull the full job list back from the Sheet so every device sees the same jobs,
+// not just the ones saved locally on this browser.
+function fetchRemoteJobs() {
+  const url = getSyncUrl();
+  if (!url) return Promise.resolve([]);
+  return fetch(url, { method: 'GET' })
+    .then(r => r.json())
+    .then(data => Array.isArray(data.jobs) ? data.jobs : [])
+    .catch(() => []);
+}
+
+function mergeJobs(localJobs, remoteJobs) {
+  const map = new Map();
+  remoteJobs.forEach(j => { if (j && j.id != null) map.set(j.id, j); });
+  localJobs.forEach(j => { if (j && j.id != null) map.set(j.id, j); }); // local copy wins on conflict
+  return Array.from(map.values()).sort((a, b) => (b.id || 0) - (a.id || 0));
 }
 
 function pushJobToSheet(job) {
@@ -1354,7 +1379,7 @@ function syncAllToSheet() {
         3. วางโค้ดที่ผู้พัฒนาให้มา แล้วกด <strong>Deploy → New deployment → Web app</strong><br>
         4. ตั้งค่า "Who has access" เป็น <strong>Anyone</strong> แล้วกด Deploy<br>
         5. คัดลอกลิงก์ที่ได้ (ลงท้ายด้วย /exec) มาวางในช่องด้านบน<br><br>
-        เมื่อเชื่อมต่อแล้ว ทุกครั้งที่กด <strong>💾 บันทึกงาน</strong> ข้อมูลจะถูกส่งไปสำรองไว้ใน Google Sheet โดยอัตโนมัติ
+        เมื่อเชื่อมต่อแล้ว ทุกครั้งที่กด <strong>💾 บันทึกงาน</strong> ข้อมูลจะถูกส่งไปสำรองไว้ใน Google Sheet โดยอัตโนมัติ และทุกเครื่องที่เชื่อมต่อลิงก์เดียวกันจะเห็นรายการงานชุดเดียวกันในเมนู <strong>📂 งานที่บันทึกไว้</strong>
       </div>
     </div>
   </div>
