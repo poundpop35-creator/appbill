@@ -645,16 +645,23 @@
 
 <script>
 let itemsData = [
-  { no: "1", desc: "", qty: "", unit: "ชุด", price: "" }
+  { no: "1", desc: "", qty: "", unit: "ชุด", price: "", net: "", netManual: false }
 ];
+
+// Line total: uses the manually-entered ราคาสุทธิ if set, otherwise qty × price
+function getLineTotal(item) {
+  if (item.netManual && item.net !== '' && item.net != null) {
+    return parseFloat(item.net) || 0;
+  }
+  return (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+}
 
 function renderItemsForm() {
   const container = document.getElementById('items-form-container');
   container.innerHTML = '';
   itemsData.forEach((item, index) => {
-    const q = parseFloat(item.qty) || 0;
-    const p = parseFloat(item.price) || 0;
-    const subtotal = q * p;
+    const subtotal = getLineTotal(item);
+    const netDisplay = item.netManual ? item.net : (subtotal > 0 ? subtotal : '');
     const card = document.createElement('div');
     card.className = 'item-card';
     card.innerHTML = `
@@ -681,13 +688,13 @@ function renderItemsForm() {
         </div>
         <div>
           <label class="form-label">ราคาต่อหน่วย (บาท)</label>
-          <input type="number" value="${item.price}" placeholder="0"
+          <input type="number" value="${item.price}" placeholder="ไม่ใส่ก็ได้ถ้ากรอกราคาสุทธิเอง"
             class="form-input" oninput="updateItemData(${index}, 'price', this.value)">
         </div>
         <div>
           <label class="form-label">ราคาสุทธิ</label>
-          <input type="text" value="${subtotal > 0 ? subtotal.toLocaleString() : ''}"
-            class="form-input readonly" readonly placeholder="คำนวณอัตโนมัติ">
+          <input type="number" value="${netDisplay}" placeholder="คำนวณอัตโนมัติ หรือกรอกเอง"
+            class="form-input item-net" oninput="updateItemData(${index}, 'net', this.value)">
         </div>
       </div>
     `;
@@ -700,24 +707,31 @@ function renderItemsForm() {
 }
 
 function updateItemData(index, field, value) {
-  itemsData[index][field] = value;
-  // Update subtotal input instantly
+  const item = itemsData[index];
+  if (field === 'net') {
+    item.net = value;
+    item.netManual = value !== '';
+  } else {
+    item[field] = value;
+  }
+  // Update subtotal display instantly
   const card = document.getElementById('items-form-container').children[index];
-  if (card && (field === 'qty' || field === 'price')) {
-    const q = parseFloat(itemsData[index].qty) || 0;
-    const p = parseFloat(itemsData[index].price) || 0;
-    const subtotal = q * p;
+  if (card && (field === 'qty' || field === 'price' || field === 'net')) {
+    const subtotal = getLineTotal(item);
     const badge = card.querySelector('.item-subtotal');
-    const readonlyInput = card.querySelectorAll('.form-input.readonly')[0];
     if (badge) badge.textContent = subtotal > 0 ? subtotal.toLocaleString() + ' ฿' : '—';
-    if (readonlyInput) readonlyInput.value = subtotal > 0 ? subtotal.toLocaleString() : '';
+    // Only refresh the net field's display when its value is auto-calculated, not while the user is typing in it
+    if ((field === 'qty' || field === 'price') && !item.netManual) {
+      const netInput = card.querySelector('.item-net');
+      if (netInput) netInput.value = subtotal > 0 ? subtotal : '';
+    }
   }
   calculateAllTotals();
 }
 
 function addItem() {
   const nextNo = (itemsData.length + 1).toString();
-  itemsData.push({ no: nextNo, desc: "", qty: "", unit: "ชุด", price: "" });
+  itemsData.push({ no: nextNo, desc: "", qty: "", unit: "ชุด", price: "", net: "", netManual: false });
   renderItemsForm();
   // Scroll to new item
   setTimeout(() => {
@@ -730,7 +744,7 @@ function addItem() {
 function removeItem(index) {
   if (itemsData.length === 1) {
     // Reset instead of removing last item
-    itemsData[0] = { no: "1", desc: "", qty: "", unit: "ชุด", price: "" };
+    itemsData[0] = { no: "1", desc: "", qty: "", unit: "ชุด", price: "", net: "", netManual: false };
     renderItemsForm();
     return;
   }
@@ -742,9 +756,7 @@ function removeItem(index) {
 
 function calculateAllTotals() {
   let grandTotal = 0;
-  itemsData.forEach(item => {
-    grandTotal += (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
-  });
+  itemsData.forEach(item => { grandTotal += getLineTotal(item); });
   const formatted = grandTotal.toLocaleString('th-TH', { minimumFractionDigits: 0 });
   const textNum = ArabicNumberToText(grandTotal.toString());
 
@@ -779,7 +791,7 @@ function updatePreview() {
   }
 
   let grandTotal = 0;
-  itemsData.forEach(item => { grandTotal += (parseFloat(item.qty)||0) * (parseFloat(item.price)||0); });
+  itemsData.forEach(item => { grandTotal += getLineTotal(item); });
   const formatted = grandTotal.toLocaleString('th-TH');
   const textNum = ArabicNumberToText(grandTotal.toString());
 
@@ -790,9 +802,8 @@ function updatePreview() {
   const tbody = document.getElementById('out-items-tbody');
   let html = '';
   itemsData.forEach(item => {
-    const q = parseFloat(item.qty) || 0;
     const p = parseFloat(item.price) || 0;
-    const rowTotal = q * p;
+    const rowTotal = getLineTotal(item);
     html += `<tr>
       <td>${item.no}</td>
       <td style="white-space:pre-wrap">${(item.desc||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</td>
