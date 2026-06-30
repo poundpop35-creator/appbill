@@ -1186,6 +1186,7 @@ function deleteJob(e, id) {
   if (!confirm('ลบงานนี้ออกจากรายการ?')) return;
   const jobs = getJobs().filter(x => x.id !== id);
   localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+  deleteJobFromSheet(id);
   renderJobsList();
 }
 
@@ -1242,6 +1243,7 @@ function saveSyncUrl() {
 function jobToSheetRow(j) {
   const total = (j.items || []).reduce((s, i) => (s + (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0)), 0);
   return {
+    action: 'create',
     id: j.id,
     savedAt: j.savedAt,
     mode: j.mode === 'quote' ? 'ใบเสนอราคา' : 'บิลเงินสด',
@@ -1265,6 +1267,17 @@ function pushJobToSheet(job) {
     mode: 'no-cors',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(jobToSheetRow(job))
+  }).catch(() => {});
+}
+
+function deleteJobFromSheet(id) {
+  const url = getSyncUrl();
+  if (!url) return;
+  fetch(url, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' },
+    body: JSON.stringify({ action: 'delete', id: id })
   }).catch(() => {});
 }
 
