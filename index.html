@@ -1192,6 +1192,16 @@ function deleteJob(e, id) {
 // ===== GOOGLE SHEETS BACKUP =====
 const SYNC_KEY = 'appbill_gsheet_url';
 const DEFAULT_SYNC_URL = 'https://script.google.com/macros/s/AKfycbzpEpIIuY2-dN2604xV3NOrt0uDdfEXzB6MhpYmvz1PiKxMwhF_7L_74KQAmN40fVg/exec';
+const SYNC_URL_PATTERN = /^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/;
+
+// Self-heal: wipe any non-Apps-Script link saved on this device before
+// URL validation existed, so the built-in default takes over automatically.
+(function cleanupInvalidSyncUrl() {
+  const saved = localStorage.getItem(SYNC_KEY);
+  if (saved && !SYNC_URL_PATTERN.test(saved)) {
+    localStorage.removeItem(SYNC_KEY);
+  }
+})();
 
 function getSyncUrl() {
   return localStorage.getItem(SYNC_KEY) || DEFAULT_SYNC_URL;
@@ -1216,7 +1226,7 @@ function updateSyncStatus() {
 
 function saveSyncUrl() {
   const url = document.getElementById('sync-url-input').value.trim();
-  if (url && !/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) {
+  if (url && !SYNC_URL_PATTERN.test(url)) {
     alert('ลิงก์ไม่ถูกต้อง ❌\n\nต้องเป็นลิงก์ Apps Script ที่ลงท้ายด้วย /exec\nไม่ใช่ลิงก์ Google Sheet ทั่วไป (docs.google.com/spreadsheets/...)\n\nดูวิธีตั้งค่าด้านล่าง');
     return;
   }
