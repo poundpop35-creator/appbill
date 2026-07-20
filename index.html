@@ -72,6 +72,14 @@
   .btn-clear:hover { background: rgba(220,38,38,0.28); }
   .btn-save { background: rgba(22,163,74,0.2); color: #86efac; border: 1px solid rgba(22,163,74,0.35); }
   .btn-save:hover { background: rgba(22,163,74,0.35); }
+  .btn-save.edit-mode { background: rgba(234,179,8,0.2); color: #fde68a; border: 1px solid rgba(234,179,8,0.4); }
+  .btn-save.edit-mode:hover { background: rgba(234,179,8,0.35); }
+  .edit-mode-badge {
+    font-size: 11px; color: #fde68a; background: rgba(234,179,8,0.15);
+    border: 1px solid rgba(234,179,8,0.35); border-radius: 20px;
+    padding: 4px 10px; white-space: nowrap; max-width: 120px;
+    overflow: hidden; text-overflow: ellipsis; align-self: center;
+  }
   .btn-jobs { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
   .btn-jobs:hover { background: rgba(255,255,255,0.18); }
   .btn-sync { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.2); }
@@ -421,7 +429,8 @@
   <div class="topbar-actions">
     <button class="btn-top btn-clear" onclick="clearData()">🗑️ <span>ล้างข้อมูล</span></button>
     <button class="btn-top btn-jobs" onclick="openJobsModal()">📂 <span>งานที่บันทึก</span></button>
-    <button class="btn-top btn-save" onclick="saveJob()">💾 <span>บันทึกงาน</span></button>
+    <div class="edit-mode-badge" id="edit-mode-badge" style="display:none"></div>
+    <button class="btn-top btn-save" id="btn-save-main" onclick="saveJob()">💾 <span>บันทึกงาน</span></button>
     <button class="btn-top btn-sync" onclick="openSyncModal()">☁️ <span>Google Sheet</span></button>
     <button class="btn-top btn-share" onclick="shareImage()">↗️ <span>แชร์</span></button>
     <button class="btn-top btn-img" onclick="downloadImage()">🖼️ <span>รูปภาพ</span></button>
@@ -1080,11 +1089,13 @@ function clearData() {
   document.getElementById('in-remarks').value = '';
   const today = new Date();
   document.getElementById('in-date').value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-  itemsData = [{ no: "1", desc: "", qty: "", unit: "ชุด", price: "" }];
+  itemsData = [{ no: "1", desc: "", qty: "", unit: "ชุด", price: "", net: "", netManual: false }];
   document.getElementById('in-approver-mode').value = 'customer';
   document.getElementById('in-approver-name').value = '';
   setDocMode('bill');
   renderItemsForm();
+  currentJobId = null;
+  updateEditMode();
 }
 
 // Init
@@ -1108,14 +1119,11 @@ function getJobs() {
   try { return JSON.parse(localStorage.getItem(JOBS_KEY) || '[]'); } catch { return []; }
 }
 
-function saveJob() {
-  const name = document.getElementById('in-customer-name').value.trim();
-  const label = name || '(ไม่มีชื่อลูกค้า)';
-  const jobs = getJobs();
-  const newJob = {
-    id: Date.now(),
+function buildJobObject(id) {
+  return {
+    id: id,
     savedAt: new Date().toISOString(),
-    name: label,
+    name: document.getElementById('in-customer-name').value.trim() || '(ไม่มีชื่อลูกค้า)',
     addr:    document.getElementById('in-customer-addr').value,
     taxId:   document.getElementById('in-tax-id').value,
     job:     document.getElementById('in-job-name').value,
@@ -1126,18 +1134,66 @@ function saveJob() {
     approverMode: document.getElementById('in-approver-mode').value,
     approverName: document.getElementById('in-approver-name').value
   };
-  jobs.unshift(newJob);
-  // keep max 50
-  if (jobs.length > 50) jobs.splice(50);
-  localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
-  pushJobToSheet(newJob);
-  const btn = document.querySelector('.btn-save');
-  const orig = btn.innerHTML;
-  btn.innerHTML = '✅ <span>บันทึกแล้ว</span>';
-  setTimeout(() => btn.innerHTML = orig, 1500);
+}
+
+function saveJob() {
+  const btn = document.getElementById('btn-save-main');
+  const origHTML = btn.innerHTML;
+
+  if (currentJobId) {
+    // UPDATE existing job in place
+    const job = buildJobObject(currentJobId);
+    const jobs = getJobs();
+    const idx = jobs.findIndex(x => x.id === currentJobId);
+    if (idx !== -1) jobs[idx] = job;
+    else jobs.unshift(job);
+    if (jobs.length > 50) jobs.splice(50);
+    localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+    // Update in sheet: remove old row then push new one
+    deleteJobFromSheet(currentJobId);
+    setTimeout(() => pushJobToSheet(job), 400);
+    // Update cache
+    const ci = currentJobsListCache.findIndex(x => x.id === currentJobId);
+    if (ci !== -1) currentJobsListCache[ci] = job;
+    btn.innerHTML = '✅ <span>บันทึกทับแล้ว</span>';
+  } else {
+    // CREATE new job
+    const job = buildJobObject(Date.now());
+    const jobs = getJobs();
+    jobs.unshift(job);
+    if (jobs.length > 50) jobs.splice(50);
+    localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+    pushJobToSheet(job);
+    currentJobsListCache.unshift(job);
+    currentJobId = job.id;
+    updateEditMode();
+    btn.innerHTML = '✅ <span>บันทึกแล้ว</span>';
+  }
+
+  setTimeout(() => {
+    updateEditMode(); // restore correct label after flash
+  }, 1500);
 }
 
 let currentJobsListCache = [];
+let currentJobId = null;
+
+function updateEditMode() {
+  const btn = document.getElementById('btn-save-main');
+  const badge = document.getElementById('edit-mode-badge');
+  if (!btn) return;
+  if (currentJobId) {
+    const j = currentJobsListCache.find(x => x.id === currentJobId) || getJobs().find(x => x.id === currentJobId);
+    const label = j ? j.name : 'งานเดิม';
+    btn.innerHTML = '💾 <span>บันทึกทับ</span>';
+    btn.classList.add('edit-mode');
+    if (badge) { badge.textContent = '✏️ ' + label; badge.style.display = 'flex'; }
+  } else {
+    btn.innerHTML = '💾 <span>บันทึกงาน</span>';
+    btn.classList.remove('edit-mode');
+    if (badge) badge.style.display = 'none';
+  }
+}
 
 function openJobsModal() {
   document.getElementById('jobs-modal-body').innerHTML = '<div class="modal-empty">กำลังโหลดงานจากทุกเครื่อง...</div>';
@@ -1194,6 +1250,8 @@ function loadJob(id) {
   renderItemsForm();
   updatePreview();
   saveToStorage();
+  currentJobId = j.id;
+  updateEditMode();
   closeJobsModal();
 }
 
