@@ -390,25 +390,78 @@
     }
   }
 
+  /* ===== MOBILE BOTTOM NAV ===== */
+  .mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: white;
+    border-top: 1.5px solid var(--border);
+    z-index: 200;
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -2px 16px rgba(15,45,94,0.1);
+  }
+  .mobile-tab-btn {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 3px;
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
+    background: none; border: none; cursor: pointer;
+    font-family: inherit; padding: 6px 0; transition: color .15s;
+  }
+  .mobile-tab-btn.active { color: var(--navy); }
+  .mobile-tab-icon { font-size: 20px; line-height: 1; }
+
+  .mobile-preview-actions {
+    display: none;
+    gap: 8px; padding: 14px 12px; flex-wrap: wrap; justify-content: center;
+    width: 100%; border-top: 1px solid var(--border); background: var(--surface);
+  }
+  .mobile-action-btn {
+    flex: 1; min-width: 72px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    padding: 12px 8px; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+    border: 1.5px solid var(--border); background: white; color: var(--text);
+    transition: all .15s;
+  }
+  .mobile-action-btn:active { background: var(--navy-light); border-color: var(--navy); }
+  .mobile-action-btn.primary { background: var(--navy); color: white; border-color: var(--navy); }
+  .mobile-action-btn.primary:active { background: var(--navy-mid); }
+
   /* ===== MOBILE ===== */
   @media (max-width: 900px) {
     .main-layout { grid-template-columns: 1fr; }
-    .sidebar { height: auto; position: static; }
+    .sidebar {
+      height: auto; position: static;
+      padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+    }
     .topbar-brand span:not(:first-child) { display: none; }
     .topbar-brand-dot { display: none; }
     .btn-top span { display: none; }
-    .topbar-actions { gap: 4px; }
-    .btn-top { padding: 7px 9px; font-size: 15px; }
-    .preview-area { padding: 16px 0; overflow-x: auto; align-items: flex-start; }
+    .topbar-actions { gap: 3px; }
+    .btn-top { padding: 8px 10px; font-size: 16px; }
+    .btn-sync, .btn-img { display: none; }
 
-    /* Show A4 at full size with horizontal scroll */
-    .preview-wrapper {
-      width: max-content;
-      overflow-x: visible;
-      display: block;
-      padding: 0 12px;
+    .preview-area {
+      padding: 12px 0 calc(68px + env(safe-area-inset-bottom, 0px)) 0;
+      overflow: hidden; align-items: flex-start;
     }
+    .preview-wrapper { overflow: hidden; display: block; padding: 0 12px; }
     .a4-wrapper { margin: 0; }
+
+    .sidebar.mobile-hidden { display: none !important; }
+    .preview-area.mobile-hidden { display: none !important; }
+    .mobile-bottom-nav { display: flex !important; }
+    .mobile-preview-actions { display: flex !important; }
+
+    .form-input { padding: 11px 12px; font-size: 15px; min-height: 44px; }
+    .form-label { font-size: 13px; margin-bottom: 6px; }
+    .sidebar-inner { padding: 16px; }
+    .btn-add { padding: 14px; font-size: 14px; min-height: 48px; }
+    .section-title { margin-bottom: 16px; }
+    .total-display { padding: 18px; }
+    .total-display-num { font-size: 26px; }
   }
 
   /* Animations */
@@ -649,9 +702,28 @@
 
       </div><!-- /a4-wrapper -->
     </div>
+
+    <div class="mobile-preview-actions">
+      <button class="mobile-action-btn primary" onclick="downloadPDF()">📥 PDF</button>
+      <button class="mobile-action-btn" onclick="printReceipt()">🖨️ พิมพ์</button>
+      <button class="mobile-action-btn" onclick="shareImage()">↗️ แชร์</button>
+      <button class="mobile-action-btn" onclick="saveJob()">💾 บันทึก</button>
+    </div>
   </main>
 
 </div><!-- /main-layout -->
+
+<!-- Mobile Bottom Navigation -->
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <button class="mobile-tab-btn active" id="mobile-tab-form" onclick="setMobileTab('form')">
+    <span class="mobile-tab-icon">📝</span>
+    <span>กรอกข้อมูล</span>
+  </button>
+  <button class="mobile-tab-btn" id="mobile-tab-preview" onclick="setMobileTab('preview')">
+    <span class="mobile-tab-icon">👁️</span>
+    <span>ดูตัวอย่าง</span>
+  </button>
+</nav>
 
 <script>
 let itemsData = [
@@ -888,11 +960,22 @@ function ArabicNumberToText(Number) {
 }
 
 function resetScale() {
-  return document.getElementById('receipt-preview');
+  const el = document.getElementById('receipt-preview');
+  el._savedTransform = el.style.transform;
+  el._savedOrigin = el.style.transformOrigin;
+  el.style.transform = '';
+  el.style.transformOrigin = '';
+  return el;
 }
 
 function restoreScale() {
-  // nothing to restore — no scaling applied
+  const el = document.getElementById('receipt-preview');
+  if (el && el._savedTransform !== undefined) {
+    el.style.transform = el._savedTransform;
+    el.style.transformOrigin = el._savedOrigin;
+    delete el._savedTransform;
+    delete el._savedOrigin;
+  }
 }
 
 function printReceipt() {
@@ -1032,11 +1115,25 @@ function onApproverModeChange() {
   updatePreview();
 }
 
-// No scaling — A4 always renders at full size, scroll on mobile
 function setA4Scale() {
-  document.documentElement.style.setProperty('--a4-scale', '1');
+  const preview = document.getElementById('receipt-preview');
   const wrapper = document.querySelector('.preview-wrapper');
-  if (wrapper) wrapper.style.height = '';
+  if (!preview || !wrapper) return;
+  if (window.innerWidth <= 900) {
+    const availWidth = window.innerWidth - 24;
+    const scale = availWidth / 794;
+    preview.style.transform = `scale(${scale})`;
+    preview.style.transformOrigin = 'top left';
+    wrapper.style.height = Math.ceil(1123 * scale) + 'px';
+    wrapper.style.width = availWidth + 'px';
+    wrapper.style.overflow = 'hidden';
+  } else {
+    preview.style.transform = '';
+    preview.style.transformOrigin = '';
+    wrapper.style.height = '';
+    wrapper.style.width = '';
+    wrapper.style.overflow = '';
+  }
 }
 
 const STORAGE_KEY = 'appbill_data';
@@ -1099,6 +1196,30 @@ function clearData() {
   updateEditMode();
 }
 
+// ===== MOBILE TABS =====
+let mobileActiveTab = 'form';
+
+function setMobileTab(tab) {
+  mobileActiveTab = tab;
+  const sidebar = document.querySelector('.sidebar');
+  const previewArea = document.querySelector('.preview-area');
+  const tabForm = document.getElementById('mobile-tab-form');
+  const tabPreview = document.getElementById('mobile-tab-preview');
+
+  if (tab === 'form') {
+    if (sidebar) sidebar.classList.remove('mobile-hidden');
+    if (previewArea) previewArea.classList.add('mobile-hidden');
+    tabForm && tabForm.classList.add('active');
+    tabPreview && tabPreview.classList.remove('active');
+  } else {
+    if (sidebar) sidebar.classList.add('mobile-hidden');
+    if (previewArea) previewArea.classList.remove('mobile-hidden');
+    tabForm && tabForm.classList.remove('active');
+    tabPreview && tabPreview.classList.add('active');
+    setA4Scale();
+  }
+}
+
 // Init
 const _today = new Date();
 const _loaded = loadFromStorage();
@@ -1111,7 +1232,18 @@ if (!_loaded) {
 renderItemsForm();
 updatePreview();
 setA4Scale();
-window.addEventListener('resize', setA4Scale);
+if (window.innerWidth <= 900) setMobileTab('form');
+window.addEventListener('resize', () => {
+  setA4Scale();
+  if (window.innerWidth > 900) {
+    const sidebar = document.querySelector('.sidebar');
+    const preview = document.querySelector('.preview-area');
+    if (sidebar) sidebar.classList.remove('mobile-hidden');
+    if (preview) preview.classList.remove('mobile-hidden');
+  } else {
+    setMobileTab(mobileActiveTab);
+  }
+});
 
 // ===== JOBS LIST =====
 const JOBS_KEY = 'appbill_jobs';
