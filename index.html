@@ -542,6 +542,21 @@
         </div>
       </div>
 
+      <!-- ผู้ออกบิล -->
+      <div class="form-group">
+        <label class="form-label">ผู้ออกบิล / ผู้เซ็น</label>
+        <div style="display:flex; gap:8px;">
+          <button id="issuer-wisanu" onclick="setIssuer('wisanu')"
+            style="flex:1; padding:10px 6px; border-radius:var(--radius-sm); border:2px solid var(--border); background:white; color:var(--text-muted); font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer;">
+            วิษณุ เพชรณิชกุล
+          </button>
+          <button id="issuer-saharat" onclick="setIssuer('saharat')"
+            style="flex:1; padding:10px 6px; border-radius:var(--radius-sm); border:2px solid var(--border); background:white; color:var(--text-muted); font-family:inherit; font-size:12.5px; font-weight:600; cursor:pointer;">
+            สหรัฐ เพชรณิชกุล
+          </button>
+        </div>
+      </div>
+
       <!-- ลายเซ็นผู้รับเงิน -->
       <div class="form-group">
         <label class="form-label">ลายเซ็นผู้รับเงิน</label>
@@ -620,7 +635,7 @@
             <h1>ร้านปอนด์โลหะ <span style="font-size:13px; font-weight:500; color:var(--navy-mid)">(วิษณุ เพชรณิชกุล)</span></h1>
             <p>53 ม.3 ต.ท่าฉาง อ.ท่าฉาง จ.สุราษฎร์ธานี 84150</p>
             <p>โทร: 066-1499252</p>
-            <p>ผู้ออกบิล: นาย สหรัฐ เพชรณิชกุล</p>
+            <p>ผู้ออกบิล: <span id="out-issuer-name">นาย วิษณุ เพชรณิชกุล</span></p>
           </div>
           <div class="doc-title-block">
             <div class="doc-title">บิลเงินสด</div>
@@ -674,7 +689,7 @@
               <div class="doc-signature">
                 <div class="doc-signature-label" id="sig-issuer-label">ผู้รับเงิน</div>
                 <div id="sig-digital" class="doc-signature-digital" style="display:none">Wisanu Phetrnitchakun</div>
-                <div class="doc-signature-line" id="sig-issuer-line">(นาย สหรัฐ เพชรณิชกุล)</div>
+                <div class="doc-signature-line" id="sig-issuer-line">(นาย วิษณุ เพชรณิชกุล)</div>
                 <div class="doc-signature-shop">ร้านปอนด์โลหะ</div>
               </div>
               <div class="doc-signature" id="sig-approver-box">
@@ -1034,6 +1049,27 @@ function downloadImage() {
 let sigMode = 'manual';
 let sigLang = 'th';
 
+const ISSUERS = {
+  wisanu:  { th: 'วิษณุ เพชรณิชกุล',  en: 'Wisanu Phetrnitchakun' },
+  saharat: { th: 'สหรัฐ เพชรณิชกุล', en: 'Saharat Phetrnitchakun' }
+};
+let issuerKey = 'wisanu';
+
+function setIssuer(key) {
+  if (!ISSUERS[key]) key = 'wisanu';
+  issuerKey = key;
+  const wBtn = document.getElementById('issuer-wisanu');
+  const sBtn = document.getElementById('issuer-saharat');
+  const on  = key === 'wisanu' ? wBtn : sBtn;
+  const off = key === 'wisanu' ? sBtn : wBtn;
+  if (on)  { on.style.background  = 'var(--navy)'; on.style.color  = 'white'; on.style.borderColor = 'var(--navy)'; }
+  if (off) { off.style.background = 'white'; off.style.color = 'var(--text-muted)'; off.style.borderColor = 'var(--border)'; }
+  const name = 'นาย ' + ISSUERS[key].th;
+  document.getElementById('out-issuer-name').textContent = name;
+  document.getElementById('sig-issuer-line').textContent = '(' + name + ')';
+  setSigLang(sigLang);
+}
+
 function setSigLang(lang) {
   sigLang = lang;
   const thBtn = document.getElementById('sig-lang-th');
@@ -1042,12 +1078,12 @@ function setSigLang(lang) {
   if (lang === 'th') {
     thBtn.style.background = 'var(--navy)'; thBtn.style.color = 'white'; thBtn.style.borderColor = 'var(--navy)';
     enBtn.style.background = 'white'; enBtn.style.color = 'var(--text-muted)'; enBtn.style.borderColor = 'var(--border)';
-    digitalEl.textContent = 'สหรัฐ เพชรณิชกุล';
+    digitalEl.textContent = ISSUERS[issuerKey].th;
     digitalEl.className = 'doc-signature-digital sig-th';
   } else {
     enBtn.style.background = 'var(--navy)'; enBtn.style.color = 'white'; enBtn.style.borderColor = 'var(--navy)';
     thBtn.style.background = 'white'; thBtn.style.color = 'var(--text-muted)'; thBtn.style.borderColor = 'var(--border)';
-    digitalEl.textContent = 'Saharat Phetrnitchakun';
+    digitalEl.textContent = ISSUERS[issuerKey].en;
     digitalEl.className = 'doc-signature-digital sig-en';
   }
   saveToStorage();
@@ -1150,6 +1186,7 @@ function saveToStorage() {
     mode:         docMode,
     sigMode:      sigMode,
     sigLang:      sigLang,
+    issuer:       issuerKey,
     approverMode: document.getElementById('in-approver-mode').value,
     approverName: document.getElementById('in-approver-name').value
   }));
@@ -1169,6 +1206,7 @@ function loadFromStorage() {
     if (d.items && d.items.length) itemsData = d.items;
     if (d.mode)    setDocMode(d.mode);
     if (d.sigMode) setSigMode(d.sigMode);
+    setIssuer(d.issuer || 'wisanu');
     if (d.sigLang) setSigLang(d.sigLang);
     if (d.approverMode) {
       document.getElementById('in-approver-mode').value = d.approverMode;
@@ -1191,6 +1229,7 @@ function clearData() {
   document.getElementById('in-approver-mode').value = 'customer';
   document.getElementById('in-approver-name').value = '';
   setDocMode('bill');
+  setIssuer('wisanu');
   renderItemsForm();
   currentJobId = null;
   updateEditMode();
@@ -1227,6 +1266,7 @@ if (!_loaded) {
   document.getElementById('in-date').value = `${_today.getFullYear()}-${String(_today.getMonth()+1).padStart(2,'0')}-${String(_today.getDate()).padStart(2,'0')}`;
   setDocMode('bill');
   setSigMode('manual');
+  setIssuer('wisanu');
   setSigLang('th');
 }
 renderItemsForm();
@@ -1263,7 +1303,7 @@ function buildJobObject(id) {
     date:    document.getElementById('in-date').value,
     remarks: document.getElementById('in-remarks').value,
     items:   JSON.parse(JSON.stringify(itemsData)),
-    mode:    docMode, sigMode, sigLang,
+    mode:    docMode, sigMode, sigLang, issuer: issuerKey,
     approverMode: document.getElementById('in-approver-mode').value,
     approverName: document.getElementById('in-approver-name').value
   };
@@ -1377,6 +1417,7 @@ function loadJob(id) {
   if (j.items && j.items.length) itemsData = JSON.parse(JSON.stringify(j.items));
   if (j.mode)        setDocMode(j.mode);
   if (j.sigMode)     setSigMode(j.sigMode);
+  setIssuer(j.issuer || 'wisanu');
   if (j.sigLang)     setSigLang(j.sigLang);
   if (j.approverMode) { document.getElementById('in-approver-mode').value = j.approverMode; onApproverModeChange(); }
   if (j.approverName) document.getElementById('in-approver-name').value = j.approverName || '';
