@@ -283,7 +283,7 @@
     display: flex; justify-content: space-between; align-items: stretch;
     margin-bottom: 14px;
   }
-  .doc-header-issuer { flex: 1; }
+  .doc-header-issuer { flex: 1; min-width: 0; }
   .doc-header-issuer h1 { font-size: 19px; font-weight: 700; color: var(--navy); margin-bottom: 4px; }
   .doc-header-issuer p { font-size: 11.5px; color: #444; line-height: 1.5; }
   .doc-title-block {
@@ -294,8 +294,9 @@
     text-align: center;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     min-width: 130px;
+    flex-shrink: 0;
   }
-  .doc-title-block .doc-title { font-size: 18px; font-weight: 700; letter-spacing: .03em; }
+  .doc-title-block .doc-title { font-size: 18px; font-weight: 700; letter-spacing: .03em; white-space: nowrap; }
   .doc-title-block .doc-subtitle { font-size: 10px; opacity: .7; margin-top: 2px; }
 
   .doc-divider { border: none; border-top: 1.5px solid var(--navy); margin: 10px 0; }
@@ -974,76 +975,119 @@ function ArabicNumberToText(Number) {
   return BahtText;
 }
 
+// The A4 lives inside a tab that is display:none on the form tab, and is
+// transform-scaled to fit narrow screens. Both make it unmeasurable, so every
+// export unhides it and drops the scaling first, then puts it all back.
+let _captureState = null;
+
 function resetScale() {
-  const el = document.getElementById('receipt-preview');
-  el._savedTransform = el.style.transform;
-  el._savedOrigin = el.style.transformOrigin;
+  const el   = document.getElementById('receipt-preview');
+  const area = document.querySelector('.preview-area');
+  const wrap = document.querySelector('.preview-wrapper');
+  if (!_captureState) {
+    _captureState = {
+      hidden:    area.classList.contains('mobile-hidden'),
+      transform: el.style.transform,
+      origin:    el.style.transformOrigin,
+      wrapW:     wrap.style.width,
+      wrapH:     wrap.style.height,
+      wrapOv:    wrap.style.overflow
+    };
+  }
+  area.classList.remove('mobile-hidden');
   el.style.transform = '';
   el.style.transformOrigin = '';
+  wrap.style.width = '';
+  wrap.style.height = '';
+  wrap.style.overflow = '';
+  void el.offsetHeight; // force layout before anything measures it
   return el;
 }
 
 function restoreScale() {
-  const el = document.getElementById('receipt-preview');
-  if (el && el._savedTransform !== undefined) {
-    el.style.transform = el._savedTransform;
-    el.style.transformOrigin = el._savedOrigin;
-    delete el._savedTransform;
-    delete el._savedOrigin;
-  }
+  if (!_captureState) return;
+  const el   = document.getElementById('receipt-preview');
+  const area = document.querySelector('.preview-area');
+  const wrap = document.querySelector('.preview-wrapper');
+  if (_captureState.hidden) area.classList.add('mobile-hidden');
+  el.style.transform       = _captureState.transform;
+  el.style.transformOrigin = _captureState.origin;
+  wrap.style.width    = _captureState.wrapW;
+  wrap.style.height   = _captureState.wrapH;
+  wrap.style.overflow = _captureState.wrapOv;
+  _captureState = null;
+}
+
+// Webfonts decide the Thai glyph metrics; capturing before they settle makes
+// text overflow its box in the exported file.
+function readyToCapture() {
+  const el = resetScale();
+  const fonts = document.fonts ? document.fonts.ready : Promise.resolve();
+  return fonts.then(() => el);
+}
+
+function exportFailed(err) {
+  restoreScale();
+  console.error(err);
+  alert('สร้างไฟล์ไม่สำเร็จ ลองใหม่อีกครั้ง\n\n' + (err && err.message ? err.message : err));
+}
+
+function docFilename(ext) {
+  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
+  return `${DOC_MODES[docMode].label}_${name}.${ext}`;
 }
 
 function printReceipt() {
-  resetScale();
-  requestAnimationFrame(() => { window.print(); });
+  readyToCapture().then(() => {
+    requestAnimationFrame(() => window.print());
+  }).catch(exportFailed);
 }
 
 window.addEventListener('afterprint', restoreScale);
 
 function downloadPDF() {
-  const el = resetScale();
-  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
-  html2pdf().set({
+  readyToCapture().then(el => html2pdf().set({
     margin: 0,
-    filename: `${DOC_MODES[docMode].label}_${name}.pdf`,
+    filename: docFilename('pdf'),
     image: { type: 'jpeg', quality: 0.98 },
     html2canvas: { scale: 2, useCORS: true, windowWidth: 794 },
     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
     pagebreak: { mode: 'avoid-all' }
-  }).from(el).save().then(restoreScale);
+  }).from(el).save()).then(restoreScale).catch(exportFailed);
+}
+
+function renderCanvas() {
+  return readyToCapture()
+    .then(el => html2canvas(el, { scale: 2, useCORS: true, windowWidth: 794 }));
 }
 
 function shareImage() {
-  const el = resetScale();
-  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
-  const filename = `${DOC_MODES[docMode].label}_${name}.png`;
-  html2canvas(el, { scale: 2, useCORS: true, windowWidth: 794 }).then(canvas => {
+  const filename = docFilename('png');
+  renderCanvas().then(canvas => new Promise(resolve => {
     canvas.toBlob(blob => {
       restoreScale();
       const file = new File([blob], filename, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: filename });
+        navigator.share({ files: [file], title: filename }).catch(() => {});
       } else {
-        // fallback: download
         const a = document.createElement('a');
         a.download = filename;
         a.href = URL.createObjectURL(blob);
         a.click();
       }
+      resolve();
     }, 'image/png');
-  });
+  })).catch(exportFailed);
 }
 
 function downloadImage() {
-  const el = resetScale();
-  const name = document.getElementById('in-customer-name').value || 'ไม่มีชื่อ';
-  html2canvas(el, { scale: 2, useCORS: true, windowWidth: 794 }).then(canvas => {
+  renderCanvas().then(canvas => {
     const a = document.createElement('a');
-    a.download = `${DOC_MODES[docMode].label}_${name}.png`;
+    a.download = docFilename('png');
     a.href = canvas.toDataURL('image/png');
     a.click();
     restoreScale();
-  });
+  }).catch(exportFailed);
 }
 
 let sigMode = 'manual';
